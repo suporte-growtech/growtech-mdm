@@ -13,6 +13,7 @@ async function getSystemInfo() {
 
   return {
     hostname: os.hostname(),
+    uptime: Math.floor(os.uptime()),
     os: os.type(),
     os_version: os.release(),
     cpu_model: cpu.manufacturer + ' ' + cpu.brand,

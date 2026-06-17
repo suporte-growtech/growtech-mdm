@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS devices (
   ip_address VARCHAR(45),
   mac_address VARCHAR(17),
   last_seen TIMESTAMPTZ DEFAULT NOW(),
+  uptime INTEGER DEFAULT 0,
   status VARCHAR(20) DEFAULT 'offline' CHECK (status IN ('online', 'offline', 'blocked', 'decommissioned')),
   enrolled_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),

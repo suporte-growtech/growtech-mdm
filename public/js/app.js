@@ -27,6 +27,15 @@ function showPage(id) {
   $('pageTitle').textContent = nav ? nav.querySelector('span:last-child').textContent : '';
 }
 
+function formatUptime(s) {
+  if (!s || s <= 0) return '-';
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  if (d > 0) return `${d}d ${h}h`;
+  const m = Math.floor((s % 3600) / 60);
+  return `${h}h ${m}m`;
+}
+
 function formatBytes(bytes) {
   if (!bytes) return '0 B';
   const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0; let s = bytes;
@@ -135,7 +144,8 @@ function renderDevices(list) {
           <td>${formatBytes(d.ram_total)}</td>
           <td>${formatBytes(d.disk_total)}</td>
           <td><span class="badge badge-${d.status}">${d.status === 'online' ? '●' : '○'} ${d.status}</span></td>
-          <td style="color:var(--text-secondary);font-size:12px">${formatDate(d.last_seen)}</td>
+          <td style="color:var(--text-secondary);font-size:12px">${formatUptime(d.uptime)}</td>
+          <td style="color:var(--text-muted);font-size:11px">${formatDate(d.last_seen)}</td>
         </tr>`
       ).join('')
     : '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><p>Nenhum dispositivo conectado</p></div></td></tr>';
@@ -161,7 +171,9 @@ async function showDeviceDetail(id) {
   setVal('detailOs', `${d.os || ''} ${d.os_version || ''}`);
   setVal('detailCpu', d.cpu_model); setVal('detailRam', formatBytes(d.ram_total));
   setVal('detailDisk', formatBytes(d.disk_total)); setVal('detailIp', d.ip_address);
-  setVal('detailMac', d.mac_address); setVal('detailLastSeen', formatDate(d.last_seen));
+  setVal('detailMac', d.mac_address);
+  setVal('detailUptime', formatUptime(d.uptime));
+  setVal('detailLastSeen', formatDate(d.last_seen));
   setVal('detailEnrolled', formatDate(d.enrolled_at)); setVal('detailId', d.id);
   if ($('detailStatus')) $('detailStatus').innerHTML = `<span class="badge badge-${d.status}">● ${d.status}</span>`;
 
