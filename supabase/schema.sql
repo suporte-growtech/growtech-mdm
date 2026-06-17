@@ -2,9 +2,6 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- Habilitar Realtime para a tabela commands (agentes escutam mudanças)
-ALTER PUBLICATION supabase_realtime ADD TABLE commands;
-
 -- Tabela de dispositivos
 CREATE TABLE IF NOT EXISTS devices (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -60,6 +57,9 @@ CREATE TABLE IF NOT EXISTS commands (
   created_by VARCHAR(255),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Habilitar Realtime para a tabela commands (agentes escutam mudanças)
+ALTER PUBLICATION supabase_realtime ADD TABLE commands;
 
 -- Tabela de software instalado
 CREATE TABLE IF NOT EXISTS software (
