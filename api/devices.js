@@ -20,6 +20,14 @@ module.exports = async (req, res) => {
       return res.json(data || []);
     }
 
+    if (req.method === 'PATCH') {
+      const { id, ...updates } = req.body;
+      if (!id) return res.status(400).json({ error: 'ID é obrigatório' });
+      const { data, error } = await supabase.from('devices').update(updates).eq('id', id).select().single();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json(data);
+    }
+
     res.status(405).json({ error: 'Method not allowed' });
   });
 };

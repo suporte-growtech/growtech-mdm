@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Growtech MDM</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -64,6 +66,12 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </span>
         <span>Comandos</span>
+      </button>
+      <button class="nav-item" data-page="mapPage">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        </span>
+        <span>Mapa</span>
       </button>
     </nav>
     <div class="sidebar-footer">
@@ -165,7 +173,7 @@
         <div class="card">
           <div class="table-wrapper">
             <table>
-              <thead><tr><th>Hostname</th><th>Serial</th><th>SO</th><th>RAM</th><th>Disco</th><th>Status</th><th>Uptime</th><th>Contato</th></tr></thead>
+              <thead><tr><th>Hostname</th><th>Serial</th><th>SO</th><th>RAM</th><th>Disco</th><th>Status</th><th>Uptime</th><th>Localização</th><th>Contato</th></tr></thead>
               <tbody id="deviceList"></tbody>
             </table>
           </div>
@@ -221,6 +229,8 @@
           <div class="detail-item"><label>Último Contato</label><div class="value" id="detailLastSeen">-</div></div>
           <div class="detail-item"><label>Registrado em</label><div class="value" id="detailEnrolled">-</div></div>
           <div class="detail-item"><label>ID do Dispositivo</label><div class="value" id="detailId" style="font-size:11px">-</div></div>
+          <div class="detail-item"><label>Localização</label><div class="value" id="detailLocation">-</div></div>
+          <div class="detail-item"><label>Rede Wi-Fi</label><div class="value" id="detailWifi">-</div></div>
         </div>
         <div class="card">
           <div class="card-header"><h3>Histórico de Comandos</h3></div>
@@ -303,6 +313,23 @@
             <p>Desligamento remoto</p>
           </div>
         </div>
+      <!-- Map -->
+      <div id="mapPage" class="page hidden">
+        <div class="section-header">
+          <h2>Mapa de Dispositivos</h2>
+          <button class="btn btn-primary btn-sm" id="refreshMap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Atualizar
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-body" style="padding:0">
+            <div id="deviceMap" style="height:500px;border-radius:var(--radius-md)"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:16px" id="locationList"></div>
+      </div>
+
       </div>
     </div>
   </div>

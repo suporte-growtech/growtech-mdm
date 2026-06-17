@@ -93,7 +93,7 @@ $('themeToggle').addEventListener('click', () => {
   setTheme(next);
 });
 
-function initApp() { loadDashboard(); loadDevices(); loadPolicies(); setInterval(loadDashboard, 15000); }
+function initApp() { loadDashboard(); loadDevices(); loadPolicies(); loadMap(); setInterval(loadDashboard, 15000); }
 
 /* Dashboard */
 async function loadDashboard() {
@@ -147,7 +147,16 @@ async function loadDevices() {
   try {
     devicesCache = await api('/devices');
     renderDevices(devicesCache);
+    api('/geolocate', { method: 'POST' }).catch(() => {});
   } catch {}
+}
+
+function formatLocation(d) {
+  const parts = [];
+  if (d.city) parts.push(d.city);
+  if (d.region) parts.push(d.region);
+  if (d.country) parts.push(d.country);
+  return parts.length ? parts.join(', ') : '-';
 }
 
 function renderDevices(list) {
@@ -161,10 +170,11 @@ function renderDevices(list) {
           <td>${formatBytes(d.disk_total)}</td>
           <td><span class="badge badge-${d.status}">${d.status === 'online' ? '●' : '○'} ${d.status}</span></td>
           <td style="color:var(--text-secondary);font-size:12px">${formatUptime(d.uptime)}</td>
+          <td style="color:var(--text-secondary);font-size:12px">${formatLocation(d)}</td>
           <td style="color:var(--text-muted);font-size:11px">${formatDate(d.last_seen)}</td>
         </tr>`
       ).join('')
-    : '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><p>Nenhum dispositivo conectado</p></div></td></tr>';
+    : '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><p>Nenhum dispositivo conectado</p></div></td></tr>';
 }
 
 $('deviceSearch').addEventListener('input', e => {
@@ -191,6 +201,8 @@ async function showDeviceDetail(id) {
   setVal('detailUptime', formatUptime(d.uptime));
   setVal('detailLastSeen', formatDate(d.last_seen));
   setVal('detailEnrolled', formatDate(d.enrolled_at)); setVal('detailId', d.id);
+  setVal('detailLocation', formatLocation(d));
+  setVal('detailWifi', d.wifi_ssid || '-');
   if ($('detailStatus')) $('detailStatus').innerHTML = `<span class="badge badge-${d.status}">● ${d.status}</span>`;
 
   try {
@@ -360,6 +372,56 @@ $('sendCmd').addEventListener('click', async () => {
     $('cmdModal').classList.add('hidden');
     alert('Comando enviado!');
   } catch (e) { alert(e.message); }
+});
+
+/* Map */
+let mapInstance = null;
+let mapMarkers = [];
+
+async function loadMap() {
+  const data = await api('/devices').catch(() => []);
+  const located = data.filter(d => d.latitude && d.longitude);
+
+  if (!mapInstance && $('deviceMap')) {
+    mapInstance = L.map('deviceMap').setView([-14.235, -51.9253], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap',
+      maxZoom: 18,
+    }).addTo(mapInstance);
+  }
+
+  if (mapInstance) {
+    mapMarkers.forEach(m => mapInstance.removeLayer(m));
+    mapMarkers = [];
+    located.forEach(d => {
+      const popup = `<strong>${d.hostname}</strong><br>${formatLocation(d)}<br>${d.wifi_ssid ? 'Wi-Fi: ' + d.wifi_ssid : ''}<br>${d.status}`;
+      const m = L.circleMarker([d.latitude, d.longitude], {
+        radius: 8, fillColor: d.status === 'online' ? '#22c55e' : '#5c5f7a',
+        color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.8,
+      }).addTo(mapInstance).bindPopup(popup);
+      mapMarkers.push(m);
+    });
+    if (located.length > 0) mapInstance.fitBounds(mapMarkers.map(m => m.getLatLng()), { padding: [40, 40] });
+  }
+
+  $('locationList').innerHTML = located.length
+    ? located.map(d =>
+        `<div class="stat-card" style="cursor:pointer" onclick="showDeviceDetail('${d.id}')">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <strong>${d.hostname}</strong>
+            <span class="badge badge-${d.status}" style="font-size:10px">${d.status}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary)">
+            ${formatLocation(d)} ${d.wifi_ssid ? '• ' + d.wifi_ssid : ''}
+          </div>
+        </div>`
+      ).join('')
+    : '<p style="color:var(--text-muted);text-align:center;padding:32px">Nenhum dispositivo com localização disponível</p>';
+}
+
+$('refreshMap').addEventListener('click', async () => {
+  await api('/geolocate', { method: 'POST' }).catch(() => {});
+  loadMap();
 });
 
 /* Broadcast */

@@ -1,6 +1,16 @@
 const si = require('systeminformation');
 const os = require('os');
 
+async function getWifiSSID() {
+  try {
+    const out = require('child_process').execSync(
+      'powershell -Command "(netsh wlan show interfaces | Select-String \\\"SSID\\\" | Select-String -NotMatch \\\"BSSID\\\") -replace \\\".*: \\\",\\\"\\\""',
+      { encoding: 'utf8', timeout: 5000 }
+    ).trim();
+    return out || null;
+  } catch { return null; }
+}
+
 async function getSystemInfo() {
   const [cpu, mem, disk, network] = await Promise.all([
     si.cpu(),
@@ -21,6 +31,7 @@ async function getSystemInfo() {
     disk_total: disk.length > 0 ? disk[0].size : 0,
     ip_address: net.ip4 || null,
     mac_address: net.mac || null,
+    wifi_ssid: await getWifiSSID(),
   };
 }
 
