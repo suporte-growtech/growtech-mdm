@@ -22,10 +22,12 @@ async function findWinget() {
 }
 
 async function installWithWinget(name) {
-  const winget = await findWinget();
-  if (!winget) return null;
-  execSync(`"${winget}" install --name "${name}" --silent --accept-package-agreements --accept-source-agreements`, { timeout: 300000 });
-  return `${name} instalado via winget`;
+  try {
+    const winget = await findWinget();
+    if (!winget) return null;
+    execSync(`"${winget}" install --exact --name "${name}" --silent --accept-package-agreements --accept-source-agreements`, { timeout: 300000 });
+    return `${name} instalado via winget`;
+  } catch { return null; }
 }
 
 async function executeCommand(command) {
