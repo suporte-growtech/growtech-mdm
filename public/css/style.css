@@ -33,6 +33,32 @@
   --transition: all .2s cubic-bezier(.4,0,.2,1);
 }
 
+[data-theme="light"] {
+  --bg-primary: #f5f6fa;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0f1f6;
+  --bg-input: #eef0f6;
+  --border: #d1d5e0;
+  --border-focus: #6366f1;
+  --text-primary: #1a1b2e;
+  --text-secondary: #5c5f7a;
+  --text-muted: #9498b0;
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --accent-glow: rgba(99, 102, 241, 0.15);
+  --success: #16a34a;
+  --success-bg: rgba(22, 163, 74, 0.1);
+  --warning: #d97706;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --danger: #dc2626;
+  --danger-bg: rgba(220, 38, 38, 0.1);
+  --info: #2563eb;
+  --info-bg: rgba(37, 99, 235, 0.1);
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,.1);
+}
+
 html { font-size: 14px; }
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;

@@ -4,7 +4,7 @@
 	<description>Agente MDM Growtech - Gerenciamento de Dispositivos</description>
 	<executable>C:\Program Files\nodejs\node.exe</executable>
 	<argument>--harmony</argument>
-	<argument>C:\Users\ADM\OneDrive - Eco Flame Garden\DEV\directory growtech\growtech-mdm\node_modules\node-windows\lib\wrapper.js</argument>
+	<argument>C:\Users\ADM\OneDrive - Eco Flame Garden\DEV\directory growtech\growtech-mdm\agent\node_modules\node-windows\lib\wrapper.js</argument>
 	<argument>--file</argument>
 	<argument>C:\Users\ADM\OneDrive - Eco Flame Garden\DEV\directory growtech\growtech-mdm\agent\src\index.js</argument>
 	<argument>--scriptoptions=</argument>
