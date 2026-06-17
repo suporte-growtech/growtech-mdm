@@ -1,6 +1,9 @@
 const si = require('systeminformation');
 const os = require('os');
 
+const fs = require('fs');
+const SSID_CACHE = 'C:\\Windows\\Temp\\growtech_ssid.txt';
+
 async function getWifiSSID() {
   try {
     const out = require('child_process').execSync(
@@ -8,8 +11,13 @@ async function getWifiSSID() {
       { encoding: 'utf8', timeout: 5000 }
     );
     const match = out.match(/SSID\s+:\s(.+)/);
-    return match ? match[1].trim() : null;
-  } catch { return null; }
+    if (match) {
+      const ssid = match[1].trim();
+      try { fs.writeFileSync(SSID_CACHE, ssid, 'utf8'); } catch {}
+      return ssid;
+    }
+  } catch {}
+  try { return fs.readFileSync(SSID_CACHE, 'utf8').trim() || null; } catch { return null; }
 }
 
 async function getSystemInfo() {
