@@ -1,0 +1,17 @@
+{
+  "name": "agent",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "install": "node installer/install.js",
+    "uninstall": "node installer/uninstall.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "systeminformation": "^5.23.0",
+    "node-windows": "^1.0.0-beta.8",
+    "dotenv": "^16.4.5"
+  }
+}

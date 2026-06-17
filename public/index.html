@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Growtech MDM</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div id="loginPage">
+  <div class="login-box">
+    <h1>Growtech MDM</h1>
+    <p>Gerenciamento de Dispositivos</p>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Usuário" required autocomplete="username">
+      <input type="password" id="password" placeholder="Senha" required autocomplete="current-password">
+      <button type="submit">Entrar</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <aside class="sidebar">
+    <div class="sidebar-header"><h2>Growtech MDM</h2><small>Gerenciamento de Dispositivos</small></div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-page="dashboardPage"><span class="nav-icon">📊</span><span>Dashboard</span></button>
+      <button class="nav-item" data-page="devicesPage"><span class="nav-icon">💻</span><span>Dispositivos</span></button>
+      <button class="nav-item" data-page="policiesPage"><span class="nav-icon">📋</span><span>Políticas</span></button>
+      <button class="nav-item" data-page="commandsPage"><span class="nav-icon">⚡</span><span>Comandos</span></button>
+    </nav>
+    <div class="sidebar-footer">Growtech MDM v1.0</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="topbar-right">
+        <span style="font-size:13px;color:var(--text-secondary)">Admin</span>
+        <button class="logout-btn" id="logoutBtn">Sair</button>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Dashboard -->
+      <div id="dashboardPage" class="page">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon">💻</div><div class="stat-value" id="totalDevices">0</div><div class="stat-label">Total de Dispositivos</div></div>
+          <div class="stat-card"><div class="stat-icon">🟢</div><div class="stat-value" id="onlineDevices">0</div><div class="stat-label">Online</div></div>
+          <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value" id="activePolicies">0</div><div class="stat-label">Políticas Ativas</div></div>
+          <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-value" id="pendingCommands">0</div><div class="stat-label">Comandos Pendentes</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:24px">
+          <div class="table-container" style="padding:20px">
+            <h3 style="margin-bottom:16px">Status dos Dispositivos</h3>
+            <canvas id="statusChart" height="200"></canvas>
+          </div>
+          <div class="table-container">
+            <div class="table-header"><h3>Atividade Recente</h3></div>
+            <ul class="activity-list" id="activityList" style="padding:0 20px">
+              <li style="color:var(--text-secondary)">Nenhuma atividade recente</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Devices -->
+      <div id="devicesPage" class="page hidden">
+        <div class="section-header"><h2>Dispositivos</h2><button class="btn btn-primary" id="refreshDevices">🔄 Atualizar</button></div>
+        <div class="search-box"><input type="text" id="deviceSearch" placeholder="Buscar por hostname ou serial..."></div>
+        <div class="table-container">
+          <table>
+            <thead><tr><th>Hostname</th><th>Serial</th><th>SO</th><th>RAM</th><th>Disco</th><th>Status</th><th>Último Contato</th></tr></thead>
+            <tbody id="deviceList"><tr><td colspan="7" style="text-align:center;color:var(--text-secondary)">Nenhum dispositivo encontrado</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Device Detail -->
+      <div id="deviceDetail" class="page hidden">
+        <button class="btn" onclick="showPage('devicesPage')" style="margin-bottom:16px">← Voltar</button>
+        <div class="section-header"><h2 id="detailHostname">Dispositivo</h2></div>
+        <div class="quick-actions">
+          <button class="btn btn-primary btn-sm" id="cmdInstall">📦 Instalar App</button>
+          <button class="btn btn-sm" id="cmdUninstall">🗑️ Remover App</button>
+          <button class="btn btn-sm" id="cmdScript">📜 Script</button>
+          <button class="btn btn-sm" id="cmdLock">🔒 Bloquear</button>
+          <button class="btn btn-sm" id="cmdRestart">🔄 Reiniciar</button>
+          <button class="btn btn-sm btn-danger" id="cmdShutdown">⏻ Desligar</button>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item"><label>Hostname</label><div class="value" id="detailHostname2"></div></div>
+          <div class="detail-item"><label>Serial</label><div class="value" id="detailSerial">-</div></div>
+          <div class="detail-item"><label>SO</label><div class="value" id="detailOs">-</div></div>
+          <div class="detail-item"><label>CPU</label><div class="value" id="detailCpu">-</div></div>
+          <div class="detail-item"><label>RAM</label><div class="value" id="detailRam">-</div></div>
+          <div class="detail-item"><label>Disco</label><div class="value" id="detailDisk">-</div></div>
+          <div class="detail-item"><label>IP</label><div class="value" id="detailIp">-</div></div>
+          <div class="detail-item"><label>MAC</label><div class="value" id="detailMac">-</div></div>
+          <div class="detail-item"><label>Status</label><div class="value" id="detailStatus">-</div></div>
+          <div class="detail-item"><label>Último Contato</label><div class="value" id="detailLastSeen">-</div></div>
+          <div class="detail-item"><label>Registrado em</label><div class="value" id="detailEnrolled">-</div></div>
+          <div class="detail-item"><label>ID</label><div class="value" id="detailId" style="font-size:11px">-</div></div>
+        </div>
+        <div class="table-container">
+          <div class="table-header"><h3>Histórico de Comandos</h3></div>
+          <ul class="activity-list" id="detailCommands" style="padding:0 20px">
+            <li style="color:var(--text-secondary)">Nenhum comando executado</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Policies -->
+      <div id="policiesPage" class="page hidden">
+        <div class="section-header"><h2>Políticas de Configuração</h2><button class="btn btn-primary" id="newPolicyBtn">➕ Nova Política</button></div>
+        <div class="table-container">
+          <table>
+            <thead><tr><th>Nome</th><th>Descrição</th><th>Configurações</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="policyList"><tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">Nenhuma política criada</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Commands -->
+      <div id="commandsPage" class="page hidden">
+        <div class="section-header"><h2>Comandos em Massa</h2><button class="btn btn-primary" id="broadcastBtn">📡 Broadcast</button></div>
+        <p style="color:var(--text-secondary);margin-bottom:16px">Envie comandos para todos os dispositivos online de uma vez.</p>
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card" onclick="$('broadcastType').value='install_app';$('broadcastBtn').click()" style="cursor:pointer">
+            <div class="stat-icon">📦</div><div class="stat-value">Instalar App</div><div class="stat-label">Em todos os dispositivos</div>
+          </div>
+          <div class="stat-card" onclick="$('broadcastType').value='run_script';$('broadcastBtn').click()" style="cursor:pointer">
+            <div class="stat-icon">📜</div><div class="stat-value">Executar Script</div><div class="stat-label">PowerShell remoto</div>
+          </div>
+          <div class="stat-card" onclick="$('broadcastType').value='set_wallpaper';$('broadcastBtn').click()" style="cursor:pointer">
+            <div class="stat-icon">🖼️</div><div class="stat-value">Wallpaper</div><div class="stat-label">Alterar papel de parede</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Policy Modal -->
+<div id="modalOverlay" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <h2 id="modalTitle">Nova Política</h2>
+    <input type="hidden" id="policyId">
+    <label>Nome</label><input type="text" id="policyName" placeholder="Ex: Política de Segurança">
+    <label>Descrição</label><input type="text" id="policyDesc" placeholder="Descrição opcional">
+    <label>Prioridade</label><input type="number" id="policyPriority" value="0" min="0">
+    <label>Configurações (JSON)</label>
+    <textarea id="policySettings" placeholder='{"wallpaper": "default", "block_usb": true, "lock_timeout": 300}'></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="cancelPolicy">Cancelar</button>
+      <button class="btn btn-primary" id="savePolicy">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Command Modal -->
+<div id="cmdModal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <h2 id="cmdModalTitle">Enviar Comando</h2>
+    <input type="hidden" id="cmdType">
+    <div id="cmdField1">
+      <label id="cmdLabel1">Nome do App:</label>
+      <textarea style="min-height:40px"></textarea>
+    </div>
+    <div id="cmdField2">
+      <label>Caminho do Instalador (opcional):</label>
+      <input type="text" id="cmdPath" placeholder="Ex: C:\installers\app.exe">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelCmd">Cancelar</button>
+      <button class="btn btn-primary" id="sendCmd">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Broadcast Modal -->
+<div id="broadcastModal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <h2>📡 Comando Broadcast</h2>
+    <label>Tipo de Comando</label>
+    <select id="broadcastType">
+      <option value="install_app">Instalar Aplicativo</option>
+      <option value="run_script">Executar Script</option>
+      <option value="set_wallpaper">Alterar Wallpaper</option>
+      <option value="shutdown">Desligar</option>
+      <option value="restart">Reiniciar</option>
+      <option value="lock">Bloquear</option>
+    </select>
+    <div id="broadcastAppField"><label>Nome do App</label><input type="text" id="broadcastApp" placeholder="Ex: Google Chrome"></div>
+    <div id="broadcastScriptField" class="hidden"><label>Script PowerShell</label><textarea id="broadcastScript" placeholder="Write-Host 'Hello World'"></textarea></div>
+    <div id="broadcastWallpaperField" class="hidden"><label>Caminho da Imagem</label><input type="text" id="broadcastWallpaper" placeholder="Ex: \\server\wallpapers\company.jpg"></div>
+    <div class="modal-actions">
+      <button class="btn" id="cancelBroadcast">Cancelar</button>
+      <button class="btn btn-primary" id="sendBroadcast">Enviar para Todos</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

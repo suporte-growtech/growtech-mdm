@@ -1,0 +1,14 @@
+{
+  "name": "growtech-mdm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Growtech MDM - Gerenciamento de Dispositivos",
+  "scripts": {
+    "vercel-build": "echo 'Static build complete'",
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
