@@ -264,6 +264,54 @@ function renderPolicies(list) {
 
 $('newPolicyBtn').addEventListener('click', () => showPolicyModal(null));
 
+const TEMPLATES = {
+  block_usb: {
+    name: 'Bloqueio USB',
+    desc: 'Desativa portas USB de armazenamento em massa',
+    priority: 10,
+    settings: { block_usb: true }
+  },
+  lock_timeout: {
+    name: 'Timeout de Tela',
+    desc: 'Bloqueio automático após inatividade',
+    priority: 5,
+    settings: { lock_timeout: 300, screen_saver_timeout: 600 }
+  },
+  wallpaper: {
+    name: 'Wallpaper Padrão',
+    desc: 'Define wallpaper corporativo',
+    priority: 3,
+    settings: { wallpaper: 'default', wallpaper_path: 'C:\\Company\\wallpaper.jpg' }
+  },
+  restrictions: {
+    name: 'Restrições do Sistema',
+    desc: 'Bloqueia acesso a configurações críticas',
+    priority: 8,
+    settings: { block_task_manager: true, block_cmd: true, block_regedit: true, block_control_panel: false }
+  },
+  firewall: {
+    name: 'Firewall Reforçado',
+    desc: 'Ativa e reforça regras do firewall',
+    priority: 7,
+    settings: { enable_firewall: true, block_incoming: true, block_outgoing_rules: false }
+  },
+  privacy: {
+    name: 'Privacidade e Rastreamento',
+    desc: 'Desativa telemetria e rastreamento',
+    priority: 4,
+    settings: { disable_telemetry: true, disable_cortana: true, disable_ads: true, disable_location: false }
+  }
+};
+
+function loadTemplate(key) {
+  const t = TEMPLATES[key];
+  if (!t) return;
+  $('policyName').value = t.name;
+  $('policyDesc').value = t.desc;
+  $('policyPriority').value = t.priority;
+  $('policySettings').value = JSON.stringify(t.settings, null, 2);
+}
+
 function showPolicyModal(p) {
   $('modalOverlay').classList.remove('hidden');
   $('modalTitle').innerHTML = p ? `${icon('<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>')} Editar Política` : `${icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>')} Nova Política`;

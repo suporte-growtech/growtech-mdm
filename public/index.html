@@ -316,6 +316,15 @@
       Nova Política
     </h2>
     <input type="hidden" id="policyId">
+    <label style="margin-bottom:8px;display:block">Modelos Prontos</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+      <button class="btn btn-sm" onclick="loadTemplate('block_usb')" style="font-size:11px">🔒 Bloqueio USB</button>
+      <button class="btn btn-sm" onclick="loadTemplate('lock_timeout')" style="font-size:11px">⏰ Timeout de Tela</button>
+      <button class="btn btn-sm" onclick="loadTemplate('wallpaper')" style="font-size:11px">🖼️ Wallpaper Padrão</button>
+      <button class="btn btn-sm" onclick="loadTemplate('restrictions')" style="font-size:11px">🚫 Restrições</button>
+      <button class="btn btn-sm" onclick="loadTemplate('firewall')" style="font-size:11px">🛡️ Firewall</button>
+      <button class="btn btn-sm" onclick="loadTemplate('privacy')" style="font-size:11px">👁️ Privacidade</button>
+    </div>
     <label>Nome</label>
     <input type="text" id="policyName" placeholder="Ex: Política de Segurança">
     <label>Descrição</label>
