@@ -4,10 +4,11 @@ const os = require('os');
 async function getWifiSSID() {
   try {
     const out = require('child_process').execSync(
-      'powershell -Command "$x = netsh wlan show interfaces | Select-String ''SSID'' | Select-String -NotMatch ''BSSID''; if ($x) { ($x -split '':\\s+'')[1].Trim() } else { '''' }"',
+      'netsh wlan show interfaces',
       { encoding: 'utf8', timeout: 5000 }
-    ).trim();
-    return out || null;
+    );
+    const match = out.match(/SSID\s+:\s(.+)/);
+    return match ? match[1].trim() : null;
   } catch { return null; }
 }
 
