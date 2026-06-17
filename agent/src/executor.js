@@ -1,4 +1,32 @@
 const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+
+async function findWinget() {
+  const candidates = [
+    'winget',
+    path.join(process.env.LOCALAPPDATA || '', 'Microsoft', 'WindowsApps', 'winget.exe'),
+    path.join(process.env.USERPROFILE || '', 'AppData', 'Local', 'Microsoft', 'WindowsApps', 'winget.exe'),
+    'C:\\Program Files\\WindowsApps\\winget.exe',
+  ];
+  for (const c of candidates) {
+    try { execSync(`"${c}" --version`, { timeout: 3000, stdio: 'ignore' }); return c; } catch {}
+  }
+  // Search common user directories
+  const users = ['ADM', 'Administrator', 'Public'];
+  for (const u of users) {
+    const p = `C:\\Users\\${u}\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe`;
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+async function installWithWinget(name) {
+  const winget = await findWinget();
+  if (!winget) return null;
+  execSync(`"${winget}" install --name "${name}" --silent --accept-package-agreements --accept-source-agreements`, { timeout: 300000 });
+  return `${name} instalado via winget`;
+}
 
 async function executeCommand(command) {
   const { id, type, payload } = command;
@@ -12,8 +40,9 @@ async function executeCommand(command) {
           return { status: 'executed', result: { message: 'Instalação concluída' } };
         }
         if (payload?.name) {
-          execSync(`winget install --name "${payload.name}" --silent --accept-package-agreements --accept-source-agreements`, { timeout: 300000 });
-          return { status: 'executed', result: { message: `${payload.name} instalado via winget` } };
+          const msg = await installWithWinget(payload.name);
+          if (msg) return { status: 'executed', result: { message: msg } };
+          return { status: 'failed', result: { error: 'winget não encontrado no sistema. Use o campo "Caminho do Instalador" com o caminho de um .exe ou .msi' } };
         }
         return { status: 'failed', result: { error: 'Nome, caminho ou URL do instalador obrigatório' } };
       } catch (err) {
