@@ -82,9 +82,9 @@ CREATE TABLE IF NOT EXISTS admin_users (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Inserir admin padrão (senha: admin123)
+-- Inserir admin padrão (senha: Ecofg@2026)
 INSERT INTO admin_users (username, password_hash)
-VALUES ('admin', crypt('admin123', gen_salt('bf')))
+VALUES ('Growtechadmin', crypt('Ecofg@2026', gen_salt('bf')))
 ON CONFLICT (username) DO NOTHING;
 
 -- Índices
