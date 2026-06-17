@@ -9,133 +9,294 @@
 </head>
 <body>
 
+<!-- Login -->
 <div id="loginPage">
   <div class="login-box">
-    <h1>Growtech MDM</h1>
-    <p>Gerenciamento de Dispositivos</p>
+    <h1><span>Growtech</span> MDM</h1>
+    <p class="subtitle">Gerenciamento centralizado de dispositivos</p>
     <form id="loginForm">
-      <input type="text" id="username" placeholder="Usuário" required autocomplete="username">
-      <input type="password" id="password" placeholder="Senha" required autocomplete="current-password">
-      <button type="submit">Entrar</button>
-      <div class="login-error" id="loginError"></div>
+      <div class="form-group">
+        <label>Usuário</label>
+        <input type="text" id="username" placeholder="Seu usuário" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="password" placeholder="Sua senha" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn-submit">Entrar</button>
+      <div class="login-error hidden" id="loginError">Credenciais inválidas</div>
     </form>
   </div>
 </div>
 
+<!-- App -->
 <div id="app" class="hidden">
   <aside class="sidebar">
-    <div class="sidebar-header"><h2>Growtech MDM</h2><small>Gerenciamento de Dispositivos</small></div>
+    <div class="sidebar-header">
+      <div class="sidebar-logo">G</div>
+      <div class="sidebar-header-text">
+        <h2>Growtech</h2>
+        <small>MDM Platform</small>
+      </div>
+    </div>
     <nav class="sidebar-nav">
-      <button class="nav-item active" data-page="dashboardPage"><span class="nav-icon">📊</span><span>Dashboard</span></button>
-      <button class="nav-item" data-page="devicesPage"><span class="nav-icon">💻</span><span>Dispositivos</span></button>
-      <button class="nav-item" data-page="policiesPage"><span class="nav-icon">📋</span><span>Políticas</span></button>
-      <button class="nav-item" data-page="commandsPage"><span class="nav-icon">⚡</span><span>Comandos</span></button>
+      <div class="nav-section">Menu</div>
+      <button class="nav-item active" data-page="dashboardPage">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        </span>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-page="devicesPage">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </span>
+        <span>Dispositivos</span>
+      </button>
+      <button class="nav-item" data-page="policiesPage">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </span>
+        <span>Políticas</span>
+      </button>
+      <button class="nav-item" data-page="commandsPage">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </span>
+        <span>Comandos</span>
+      </button>
     </nav>
-    <div class="sidebar-footer">Growtech MDM v1.0</div>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-avatar">A</div>
+      <div class="sidebar-footer-info">
+        <div class="name">Growtechadmin</div>
+        <div class="role">Administrador</div>
+      </div>
+    </div>
   </aside>
 
   <div class="main">
     <header class="topbar">
       <h1 id="pageTitle">Dashboard</h1>
       <div class="topbar-right">
-        <span style="font-size:13px;color:var(--text-secondary)">Admin</span>
-        <button class="logout-btn" id="logoutBtn">Sair</button>
+        <button class="btn-ghost" id="logoutBtn">Sair</button>
       </div>
     </header>
 
     <div class="content">
+
       <!-- Dashboard -->
       <div id="dashboardPage" class="page">
         <div class="stats-grid">
-          <div class="stat-card"><div class="stat-icon">💻</div><div class="stat-value" id="totalDevices">0</div><div class="stat-label">Total de Dispositivos</div></div>
-          <div class="stat-card"><div class="stat-icon">🟢</div><div class="stat-value" id="onlineDevices">0</div><div class="stat-label">Online</div></div>
-          <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value" id="activePolicies">0</div><div class="stat-label">Políticas Ativas</div></div>
-          <div class="stat-card"><div class="stat-icon">⚡</div><div class="stat-value" id="pendingCommands">0</div><div class="stat-label">Comandos Pendentes</div></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-bottom:24px">
-          <div class="table-container" style="padding:20px">
-            <h3 style="margin-bottom:16px">Status dos Dispositivos</h3>
-            <canvas id="statusChart" height="200"></canvas>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-label">Total de Dispositivos</span>
+              <div class="stat-icon-wrap purple">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="totalDevices">0</div>
           </div>
-          <div class="table-container">
-            <div class="table-header"><h3>Atividade Recente</h3></div>
-            <ul class="activity-list" id="activityList" style="padding:0 20px">
-              <li style="color:var(--text-secondary)">Nenhuma atividade recente</li>
-            </ul>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-label">Online</span>
+              <div class="stat-icon-wrap green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="onlineDevices">0</div>
+            <div class="stat-change up" id="onlinePercent">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-label">Políticas Ativas</span>
+              <div class="stat-icon-wrap amber">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="activePolicies">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-header">
+              <span class="stat-label">Comandos Pendentes</span>
+              <div class="stat-icon-wrap blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+            </div>
+            <div class="stat-value" id="pendingCommands">0</div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="card">
+            <div class="card-header"><h3>Status</h3></div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas id="statusChart"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Atividade Recente</h3></div>
+            <div class="card-body" style="padding:0">
+              <ul class="activity-list" id="activityList" style="padding:0 20px">
+                <li style="color:var(--text-muted);justify-content:center;padding:24px">Nenhuma atividade recente</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Devices -->
       <div id="devicesPage" class="page hidden">
-        <div class="section-header"><h2>Dispositivos</h2><button class="btn btn-primary" id="refreshDevices">🔄 Atualizar</button></div>
-        <div class="search-box"><input type="text" id="deviceSearch" placeholder="Buscar por hostname ou serial..."></div>
-        <div class="table-container">
-          <table>
-            <thead><tr><th>Hostname</th><th>Serial</th><th>SO</th><th>RAM</th><th>Disco</th><th>Status</th><th>Último Contato</th></tr></thead>
-            <tbody id="deviceList"><tr><td colspan="7" style="text-align:center;color:var(--text-secondary)">Nenhum dispositivo encontrado</td></tr></tbody>
-          </table>
+        <div class="section-header">
+          <h2>Dispositivos</h2>
+          <button class="btn btn-primary btn-sm" id="refreshDevices">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Atualizar
+          </button>
+        </div>
+        <div class="search-box">
+          <input type="text" id="deviceSearch" placeholder="Buscar por hostname, serial ou sistema operacional...">
+        </div>
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Hostname</th><th>Serial</th><th>SO</th><th>RAM</th><th>Disco</th><th>Status</th><th>Contato</th></tr></thead>
+              <tbody id="deviceList"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <!-- Device Detail -->
       <div id="deviceDetail" class="page hidden">
-        <button class="btn" onclick="showPage('devicesPage')" style="margin-bottom:16px">← Voltar</button>
-        <div class="section-header"><h2 id="detailHostname">Dispositivo</h2></div>
+        <button class="btn btn-sm" onclick="showPage('devicesPage')" style="margin-bottom:16px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Voltar
+        </button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h2 id="detailHostname" style="font-size:22px;font-weight:700">Dispositivo</h2>
+          <span id="detailStatus"></span>
+        </div>
         <div class="quick-actions">
-          <button class="btn btn-primary btn-sm" id="cmdInstall">📦 Instalar App</button>
-          <button class="btn btn-sm" id="cmdUninstall">🗑️ Remover App</button>
-          <button class="btn btn-sm" id="cmdScript">📜 Script</button>
-          <button class="btn btn-sm" id="cmdLock">🔒 Bloquear</button>
-          <button class="btn btn-sm" id="cmdRestart">🔄 Reiniciar</button>
-          <button class="btn btn-sm btn-danger" id="cmdShutdown">⏻ Desligar</button>
+          <button class="btn btn-primary btn-sm" id="cmdInstall">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Instalar App
+          </button>
+          <button class="btn btn-sm" id="cmdUninstall">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Remover App
+          </button>
+          <button class="btn btn-sm" id="cmdScript">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Script
+          </button>
+          <button class="btn btn-sm" id="cmdLock">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Bloquear
+          </button>
+          <button class="btn btn-sm" id="cmdRestart">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Reiniciar
+          </button>
+          <button class="btn btn-danger btn-sm" id="cmdShutdown">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+            Desligar
+          </button>
         </div>
         <div class="detail-grid">
-          <div class="detail-item"><label>Hostname</label><div class="value" id="detailHostname2"></div></div>
-          <div class="detail-item"><label>Serial</label><div class="value" id="detailSerial">-</div></div>
-          <div class="detail-item"><label>SO</label><div class="value" id="detailOs">-</div></div>
-          <div class="detail-item"><label>CPU</label><div class="value" id="detailCpu">-</div></div>
-          <div class="detail-item"><label>RAM</label><div class="value" id="detailRam">-</div></div>
+          <div class="detail-item"><label>Hostname</label><div class="value" id="detailHostname2">-</div></div>
+          <div class="detail-item"><label>Número de Série</label><div class="value" id="detailSerial">-</div></div>
+          <div class="detail-item"><label>Sistema Operacional</label><div class="value" id="detailOs">-</div></div>
+          <div class="detail-item"><label>Processador</label><div class="value" id="detailCpu">-</div></div>
+          <div class="detail-item"><label>Memória RAM</label><div class="value" id="detailRam">-</div></div>
           <div class="detail-item"><label>Disco</label><div class="value" id="detailDisk">-</div></div>
-          <div class="detail-item"><label>IP</label><div class="value" id="detailIp">-</div></div>
-          <div class="detail-item"><label>MAC</label><div class="value" id="detailMac">-</div></div>
-          <div class="detail-item"><label>Status</label><div class="value" id="detailStatus">-</div></div>
+          <div class="detail-item"><label>Endereço IP</label><div class="value" id="detailIp">-</div></div>
+          <div class="detail-item"><label>Endereço MAC</label><div class="value" id="detailMac">-</div></div>
           <div class="detail-item"><label>Último Contato</label><div class="value" id="detailLastSeen">-</div></div>
           <div class="detail-item"><label>Registrado em</label><div class="value" id="detailEnrolled">-</div></div>
-          <div class="detail-item"><label>ID</label><div class="value" id="detailId" style="font-size:11px">-</div></div>
+          <div class="detail-item"><label>ID do Dispositivo</label><div class="value" id="detailId" style="font-size:11px">-</div></div>
         </div>
-        <div class="table-container">
-          <div class="table-header"><h3>Histórico de Comandos</h3></div>
+        <div class="card">
+          <div class="card-header"><h3>Histórico de Comandos</h3></div>
           <ul class="activity-list" id="detailCommands" style="padding:0 20px">
-            <li style="color:var(--text-secondary)">Nenhum comando executado</li>
+            <li style="color:var(--text-muted);justify-content:center;padding:24px">Nenhum comando executado</li>
           </ul>
         </div>
       </div>
 
       <!-- Policies -->
       <div id="policiesPage" class="page hidden">
-        <div class="section-header"><h2>Políticas de Configuração</h2><button class="btn btn-primary" id="newPolicyBtn">➕ Nova Política</button></div>
-        <div class="table-container">
-          <table>
-            <thead><tr><th>Nome</th><th>Descrição</th><th>Configurações</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="policyList"><tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">Nenhuma política criada</td></tr></tbody>
-          </table>
+        <div class="section-header">
+          <h2>Políticas</h2>
+          <button class="btn btn-primary btn-sm" id="newPolicyBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova Política
+          </button>
+        </div>
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Nome</th><th>Descrição</th><th>Configs</th><th>Prioridade</th><th>Status</th><th>Ações</th></tr></thead>
+              <tbody id="policyList"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <!-- Commands -->
       <div id="commandsPage" class="page hidden">
-        <div class="section-header"><h2>Comandos em Massa</h2><button class="btn btn-primary" id="broadcastBtn">📡 Broadcast</button></div>
-        <p style="color:var(--text-secondary);margin-bottom:16px">Envie comandos para todos os dispositivos online de uma vez.</p>
-        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
-          <div class="stat-card" onclick="$('broadcastType').value='install_app';$('broadcastBtn').click()" style="cursor:pointer">
-            <div class="stat-icon">📦</div><div class="stat-value">Instalar App</div><div class="stat-label">Em todos os dispositivos</div>
+        <div class="section-header">
+          <h2>Comandos em Massa</h2>
+          <button class="btn btn-primary btn-sm" id="broadcastBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
+            Broadcast
+          </button>
+        </div>
+        <p style="color:var(--text-secondary);margin-bottom:20px;font-size:14px">Envie comandos simultaneamente para todos os dispositivos online.</p>
+        <div class="cmd-grid">
+          <div class="cmd-card" onclick="$('broadcastType').value='install_app';$('broadcastBtn').click()">
+            <div class="cmd-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <h4>Instalar App</h4>
+            <p>Instalar em todos os dispositivos</p>
           </div>
-          <div class="stat-card" onclick="$('broadcastType').value='run_script';$('broadcastBtn').click()" style="cursor:pointer">
-            <div class="stat-icon">📜</div><div class="stat-value">Executar Script</div><div class="stat-label">PowerShell remoto</div>
+          <div class="cmd-card" onclick="$('broadcastType').value='run_script';$('broadcastBtn').click()">
+            <div class="cmd-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="1.5"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <h4>Executar Script</h4>
+            <p>PowerShell remoto</p>
           </div>
-          <div class="stat-card" onclick="$('broadcastType').value='set_wallpaper';$('broadcastBtn').click()" style="cursor:pointer">
-            <div class="stat-icon">🖼️</div><div class="stat-value">Wallpaper</div><div class="stat-label">Alterar papel de parede</div>
+          <div class="cmd-card" onclick="$('broadcastType').value='set_wallpaper';$('broadcastBtn').click()">
+            <div class="cmd-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <h4>Wallpaper</h4>
+            <p>Alterar papel de parede</p>
+          </div>
+          <div class="cmd-card" onclick="$('broadcastType').value='lock';$('broadcastBtn').click()">
+            <div class="cmd-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h4>Bloquear</h4>
+            <p>Bloquear todas as estações</p>
+          </div>
+          <div class="cmd-card" onclick="$('broadcastType').value='restart';$('broadcastBtn').click()">
+            <div class="cmd-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--info)" stroke-width="1.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </div>
+            <h4>Reiniciar</h4>
+            <p>Reinicialização remota</p>
+          </div>
+          <div class="cmd-card" onclick="$('broadcastType').value='shutdown';$('broadcastBtn').click()">
+            <div class="cmd-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+            </div>
+            <h4>Desligar</h4>
+            <p>Desligamento remoto</p>
           </div>
         </div>
       </div>
@@ -146,11 +307,17 @@
 <!-- Policy Modal -->
 <div id="modalOverlay" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
   <div class="modal">
-    <h2 id="modalTitle">Nova Política</h2>
+    <h2 id="modalTitle">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Nova Política
+    </h2>
     <input type="hidden" id="policyId">
-    <label>Nome</label><input type="text" id="policyName" placeholder="Ex: Política de Segurança">
-    <label>Descrição</label><input type="text" id="policyDesc" placeholder="Descrição opcional">
-    <label>Prioridade</label><input type="number" id="policyPriority" value="0" min="0">
+    <label>Nome</label>
+    <input type="text" id="policyName" placeholder="Ex: Política de Segurança">
+    <label>Descrição</label>
+    <input type="text" id="policyDesc" placeholder="Descrição opcional">
+    <label>Prioridade</label>
+    <input type="number" id="policyPriority" value="0" min="0">
     <label>Configurações (JSON)</label>
     <textarea id="policySettings" placeholder='{"wallpaper": "default", "block_usb": true, "lock_timeout": 300}'></textarea>
     <div class="modal-actions">
@@ -167,7 +334,7 @@
     <input type="hidden" id="cmdType">
     <div id="cmdField1">
       <label id="cmdLabel1">Nome do App:</label>
-      <textarea style="min-height:40px"></textarea>
+      <textarea style="min-height:40px" placeholder="Nome do aplicativo ou script PowerShell"></textarea>
     </div>
     <div id="cmdField2">
       <label>Caminho do Instalador (opcional):</label>
@@ -183,8 +350,11 @@
 <!-- Broadcast Modal -->
 <div id="broadcastModal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
   <div class="modal">
-    <h2>📡 Comando Broadcast</h2>
-    <label>Tipo de Comando</label>
+    <h2>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/></svg>
+      Comando Broadcast
+    </h2>
+    <label>Tipo</label>
     <select id="broadcastType">
       <option value="install_app">Instalar Aplicativo</option>
       <option value="run_script">Executar Script</option>
