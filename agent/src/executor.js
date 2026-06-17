@@ -5,13 +5,17 @@ async function executeCommand(command) {
 
   switch (type) {
     case 'install_app': {
-      if (!payload?.path && !payload?.url) {
-        return { status: 'failed', result: { error: 'Caminho ou URL do instalador não fornecido' } };
-      }
       try {
-        const installerPath = payload.path || payload.url;
-        execSync(`"${installerPath}" /quiet /norestart`, { timeout: 300000 });
-        return { status: 'executed', result: { message: 'Instalação concluída' } };
+        if (payload?.path || payload?.url) {
+          const installerPath = payload.path || payload.url;
+          execSync(`"${installerPath}" /quiet /norestart`, { timeout: 300000 });
+          return { status: 'executed', result: { message: 'Instalação concluída' } };
+        }
+        if (payload?.name) {
+          execSync(`winget install --name "${payload.name}" --silent --accept-package-agreements --accept-source-agreements`, { timeout: 300000 });
+          return { status: 'executed', result: { message: `${payload.name} instalado via winget` } };
+        }
+        return { status: 'failed', result: { error: 'Nome, caminho ou URL do instalador obrigatório' } };
       } catch (err) {
         return { status: 'failed', result: { error: err.message } };
       }
