@@ -20,15 +20,33 @@ async function getWifiSSID() {
   try { return fs.readFileSync(SSID_CACHE, 'utf8').trim() || null; } catch { return null; }
 }
 
+const VPN_NAMES = ['radmin', 'vpn', 'teredo', 'vmware', 'vEthernet', 'virtual', 'pseudo'];
+
+async function getPublicIP() {
+  try {
+    const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    return data.ip || null;
+  } catch { return null; }
+}
+
 async function getSystemInfo() {
-  const [cpu, mem, disk, network] = await Promise.all([
+  const [cpu, mem, disk, network, defIface] = await Promise.all([
     si.cpu(),
     si.mem(),
     si.fsSize(),
     si.networkInterfaces(),
+    si.networkInterfaceDefault(),
   ]);
 
-  const net = network.find(n => !n.internal) || network[0] || {};
+  const physical = network.find(n =>
+    n.iface === defIface &&
+    !n.internal &&
+    !VPN_NAMES.some(v => n.iface.toLowerCase().includes(v))
+  );
+  const net = physical || network.find(n =>
+    !n.internal && !VPN_NAMES.some(v => n.iface.toLowerCase().includes(v))
+  ) || network.find(n => !n.internal) || network[0] || {};
 
   return {
     hostname: os.hostname(),
@@ -40,6 +58,7 @@ async function getSystemInfo() {
     disk_total: disk.length > 0 ? disk[0].size : 0,
     ip_address: net.ip4 || null,
     mac_address: net.mac || null,
+    public_ip: await getPublicIP(),
     wifi_ssid: await getWifiSSID(),
   };
 }

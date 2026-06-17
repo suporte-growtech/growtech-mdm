@@ -23,16 +23,16 @@ module.exports = async (req, res) => {
 
     const { data: devices } = await supabase
       .from('devices')
-      .select('id, ip_address, city')
+      .select('id, ip_address, public_ip, city')
       .is('city', null)
-      .not('ip_address', 'is', null)
+      .not('public_ip', 'is', null)
       .limit(50);
 
     if (!devices || devices.length === 0) return res.json({ resolved: 0, message: 'Todos já possuem localização' });
 
     let resolved = 0;
     for (const d of devices) {
-      const loc = await resolveLocation(d.ip_address);
+      const loc = await resolveLocation(d.public_ip);
       if (loc) {
         await supabase.from('devices').update(loc).eq('id', d.id);
         resolved++;
