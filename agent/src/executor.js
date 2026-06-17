@@ -2,32 +2,52 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-async function findWinget() {
-  const candidates = [
-    'winget',
-    path.join(process.env.LOCALAPPDATA || '', 'Microsoft', 'WindowsApps', 'winget.exe'),
-    path.join(process.env.USERPROFILE || '', 'AppData', 'Local', 'Microsoft', 'WindowsApps', 'winget.exe'),
-    'C:\\Program Files\\WindowsApps\\winget.exe',
-  ];
-  for (const c of candidates) {
-    try { execSync(`"${c}" --version`, { timeout: 3000, stdio: 'ignore' }); return c; } catch {}
-  }
-  // Search common user directories
-  const users = ['ADM', 'Administrator', 'Public'];
-  for (const u of users) {
-    const p = `C:\\Users\\${u}\\AppData\\Local\\Microsoft\\WindowsApps\\winget.exe`;
-    if (fs.existsSync(p)) return p;
-  }
-  return null;
+const INSTALLER_URLS = {
+  firefox: 'https://download.mozilla.org/?product=firefox-latest&os=win64&lang=pt-BR',
+  chrome: 'https://dl.google.com/chrome/install/latest/chrome_installer.exe',
+  'google chrome': 'https://dl.google.com/chrome/install/latest/chrome_installer.exe',
+  '7zip': 'https://www.7-zip.org/a/7z2409-x64.exe',
+  '7-zip': 'https://www.7-zip.org/a/7z2409-x64.exe',
+  vlc: 'https://get.videolan.org/vlc/3.0.21/win64/vlc-3.0.21-win64.exe',
+  spotify: 'https://download.spotify.com/SpotifySetup.exe',
+  discord: 'https://discord.com/api/downloads/distributions/app/installers/latest?channel=stable&platform=win&arch=x64',
+  telegram: 'https://telegram.org/dl/desktop/win64',
+  whatsapp: 'https://web.whatsapp.com/desktop/windows/release/x64/WhatsAppSetup.exe',
+  'mozilla firefox': 'https://download.mozilla.org/?product=firefox-latest&os=win64&lang=pt-BR',
+  'google chrome': 'https://dl.google.com/chrome/install/latest/chrome_installer.exe',
+};
+
+async function downloadInstaller(url, dest) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(120000) });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync(dest, buffer);
 }
 
-async function installWithWinget(name) {
+async function installApp(name) {
+  const key = name.toLowerCase().trim();
+  const url = INSTALLER_URLS[key];
+
+  if (url) {
+    const tmp = path.join(process.env.TEMP || 'C:\\Windows\\Temp', `growtech_install_${Date.now()}.exe`);
+    try {
+      await downloadInstaller(url, tmp);
+      execSync(`"${tmp}" /quiet /norestart`, { timeout: 300000 });
+      try { fs.unlinkSync(tmp); } catch {}
+      return `${name} instalado com sucesso`;
+    } catch (e) {
+      try { fs.unlinkSync(tmp); } catch {}
+      throw e;
+    }
+  }
+
+  // Try winget as fallback
   try {
-    const winget = await findWinget();
-    if (!winget) return null;
-    execSync(`"${winget}" install --exact --name "${name}" --silent --accept-package-agreements --accept-source-agreements`, { timeout: 300000 });
+    execSync(`winget install --name "${name}" --silent --accept-package-agreements --accept-source-agreements`, { timeout: 300000, stdio: 'pipe' });
     return `${name} instalado via winget`;
-  } catch { return null; }
+  } catch {}
+
+  throw new Error(`App "${name}" não reconhecido. Use "Caminho do Instalador" com um .exe ou .msi, ou escolha: ${Object.keys(INSTALLER_URLS).join(', ')}`);
 }
 
 async function executeCommand(command) {
@@ -42,9 +62,8 @@ async function executeCommand(command) {
           return { status: 'executed', result: { message: 'Instalação concluída' } };
         }
         if (payload?.name) {
-          const msg = await installWithWinget(payload.name);
-          if (msg) return { status: 'executed', result: { message: msg } };
-          return { status: 'failed', result: { error: 'winget não encontrado no sistema. Use o campo "Caminho do Instalador" com o caminho de um .exe ou .msi' } };
+          const msg = await installApp(payload.name);
+          return { status: 'executed', result: { message: msg } };
         }
         return { status: 'failed', result: { error: 'Nome, caminho ou URL do instalador obrigatório' } };
       } catch (err) {
