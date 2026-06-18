@@ -367,6 +367,45 @@ tr:last-child td { border-bottom: none; }
   .topbar { padding: 12px 16px; }
 }
 
+/* Mobile */
+@media (max-width: 480px) {
+  .sidebar { position: fixed; z-index: 100; width: 100%; height: auto; bottom: 0; top: auto; flex-direction: row; border-right: none; border-top: 1px solid var(--border); }
+  .sidebar-header, .sidebar-footer { display: none; }
+  .sidebar-nav { display: flex; flex-direction: row; overflow-x: auto; padding: 4px 6px; gap: 2px; }
+  .nav-section { display: none; }
+  .nav-item { flex-direction: column; padding: 6px 10px; font-size: 10px; gap: 2px; white-space: nowrap; min-width: 56px; }
+  .nav-item span { display: block !important; }
+  .main { padding-bottom: 60px; }
+  .content { padding: 12px; }
+  .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+  .stat-card { padding: 14px 16px; }
+  .stat-value { font-size: 24px; }
+  .topbar { padding: 10px 12px; min-height: 52px; }
+  .topbar h1 { font-size: 15px; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .section-header h2 { font-size: 16px; }
+  .search-box { flex-direction: column; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .quick-actions { gap: 4px; }
+  .quick-actions .btn { font-size: 10px; padding: 4px 8px; }
+  .cmd-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .cmd-card { padding: 14px 10px; }
+  .cmd-card h4 { font-size: 12px; }
+  .cmd-card .cmd-icon { font-size: 22px; margin-bottom: 6px; }
+  .modal { width: 95%; padding: 20px; max-height: 90vh; }
+  .modal-actions { flex-direction: column; }
+  .modal-actions .btn { width: 100%; justify-content: center; }
+  table { font-size: 11px; }
+  th, td { padding: 8px 10px; }
+  .table-wrapper { margin: 0 -12px; border-radius: 0; }
+  .card { border-radius: var(--radius-sm); }
+  .detail-item { padding: 10px 12px; }
+  .detail-item label { font-size: 9px; }
+  .detail-item .value { font-size: 12px; }
+  .login-box { width: 100%; max-width: 360px; padding: 32px 24px; border-radius: var(--radius-lg); margin: 16px; }
+}
+
 /* Command cards grid */
 .cmd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
 .cmd-card {
