@@ -4,7 +4,7 @@ const { verifyToken } = require('../lib/auth');
 const COMMAND_TYPES = [
   'install_app', 'uninstall_app', 'run_script', 'shutdown',
   'restart', 'lock', 'set_wallpaper', 'block_usb',
-  'update_policy', 'system_info', 'format'
+  'update_policy', 'system_info', 'format', 'backup'
 ];
 
 module.exports = async (req, res) => {

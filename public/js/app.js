@@ -252,6 +252,25 @@ async function showDeviceDetail(id) {
       container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px">Nenhuma política atribuída</p>';
     }
   } catch {}
+
+  // Load backups
+  try {
+    const bks = await api(`/backups?device_id=${id}`);
+    const bc = $('detailBackups');
+    if (bks && bks.length > 0) {
+      bc.innerHTML = bks.map(b =>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <strong style="font-size:13px">${b.file_name}</strong>
+            <br><small style="color:var(--text-secondary)">${(b.size_bytes / 1024 / 1024).toFixed(1)}MB • ${formatDate(b.created_at)}</small>
+          </div>
+          <span class="badge badge-${b.status === 'completed' ? 'active' : 'failed'}">${b.status}</span>
+        </div>`
+      ).join('');
+    } else {
+      bc.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px">Nenhum backup realizado</p>';
+    }
+  } catch {}
 }
 
 async function togglePolicy(id, newStatus) {
@@ -280,6 +299,12 @@ $('cmdShutdown').addEventListener('click', async () => {
   if (!currentDeviceId || !confirm('Desligar este dispositivo?')) return;
   await api('/commands', { method: 'POST', body: JSON.stringify({ device_id: currentDeviceId, type: 'shutdown', payload: { delay: 10 } }) });
   alert('Comando de desligamento enviado!');
+});
+$('cmdBackup').addEventListener('click', async () => {
+  if (!currentDeviceId) return;
+  if (!confirm('Iniciar backup deste dispositivo? Pastas: Documents, Desktop, Outlook, Teams')) return;
+  await api('/commands', { method: 'POST', body: JSON.stringify({ device_id: currentDeviceId, type: 'backup', payload: {} }) });
+  alert('Backup iniciado! O resultado aparecerá na seção de Backups em alguns minutos.');
 });
 
 /* Policies */

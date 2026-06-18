@@ -1,6 +1,7 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const INSTALLER_URLS = {
   firefox: 'https://download.mozilla.org/?product=firefox-latest&os=win64&lang=pt-BR',
@@ -144,6 +145,47 @@ async function executeCommand(command) {
 
     case 'update_policy': {
       return { status: 'executed', result: { message: 'Política recebida', settings: payload?.settings } };
+    }
+
+    case 'backup': {
+      const folders = payload?.folders || [
+        'C:\\Users\\ADM\\Documents',
+        'C:\\Users\\ADM\\Desktop',
+        'C:\\Users\\ADM\\AppData\\Roaming\\Microsoft\\Outlook',
+        'C:\\Users\\ADM\\AppData\\Roaming\\Microsoft\\Teams',
+      ];
+      const tmpDir = process.env.TEMP || 'C:\\Windows\\Temp';
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const zipPath = `${tmpDir}\\growtech_backup_${os.hostname()}_${timestamp}.zip`;
+      const folderList = folders.filter(f => require('fs').existsSync(f)).join(',');
+      if (!folderList) return { status: 'failed', result: { error: 'Nenhuma pasta encontrada para backup' } };
+      try {
+        execSync(`powershell -Command "Compress-Archive -Path @(${folders.filter(f => require('fs').existsSync(f)).map(f => `'${f}'`).join(',')}) -DestinationPath '${zipPath}' -Force"`, { timeout: 600000 });
+        const fs = require('fs');
+        const stat = fs.statSync(zipPath);
+        const buffer = fs.readFileSync(zipPath);
+        const fileName = require('path').basename(zipPath);
+        const supabase = require('@supabase/supabase-js').createClient(
+          process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY
+        );
+        const { error: uploadErr } = await supabase.storage.from('backups').upload(fileName, buffer, {
+          contentType: 'application/zip', upsert: true
+        });
+        fs.unlinkSync(zipPath);
+        if (uploadErr) return { status: 'failed', result: { error: uploadErr.message } };
+        const { data: pubUrl } = supabase.storage.from('backups').getPublicUrl(fileName);
+        await supabase.from('backups').insert({
+          device_id: command.device_id,
+          file_name: fileName,
+          size_bytes: stat.size,
+          folders: folders.join(';'),
+          storage_url: pubUrl?.publicUrl || fileName,
+          status: 'completed'
+        });
+        return { status: 'executed', result: { message: `Backup criado: ${(stat.size / 1024 / 1024).toFixed(1)}MB`, file: fileName } };
+      } catch (err) {
+        return { status: 'failed', result: { error: err.message } };
+      }
     }
 
     case 'system_info': {
