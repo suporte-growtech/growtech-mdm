@@ -1,4 +1,4 @@
-const { execSync, exec } = require('child_process');
+const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -158,12 +158,10 @@ async function executeCommand(command) {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const zipName = `growtech_backup_${os.hostname()}_${timestamp}.zip`;
       const zipPath = `${tmpDir}\\${zipName}`;
-      const fs = require('fs');
       const existentFolders = folders.filter(f => fs.existsSync(f));
       if (existentFolders.length === 0) return { status: 'failed', result: { error: 'Nenhuma pasta encontrada para backup' } };
 
       try {
-        // Update progress
         const supabase = require('@supabase/supabase-js').createClient(
           process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY
         );
@@ -173,64 +171,35 @@ async function executeCommand(command) {
 
         await updateProgress(10, 'Compactando pastas...');
 
-        // Write PowerShell script to temp file (Fastest compression to avoid hanging)
-        const psScriptPath = `${tmpDir}\\growtech_zip_${Date.now()}.ps1`;
-        const folderList = existentFolders.map(f => `'${f.replace(/'/g, "''")}'`).join(',');
-        const psContent = `
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$ErrorActionPreference = 'Stop'
-$tmpParent = Join-Path $env:TEMP "growtech_backup_$(Get-Random)"
-try {
-  New-Item -ItemType Directory -Path $tmpParent -Force | Out-Null
-  $folders = @(${folderList})
-  $folders | ForEach-Object {
-    $name = Split-Path $_ -Leaf
-    $target = $_
-    $dest = "$tmpParent\$name"
-    # robocopy follows junctions/junctions unlike mklink /J + ZipFile
-    $null = robocopy "$target" "$dest" /E /R:1 /W:1 /NDL /NFL /NJH /NJS 2>&1
-    if (-not (Test-Path $dest)) { throw "Falha ao copiar $target para $dest" }
-  }
-  [System.IO.Compression.ZipFile]::CreateFromDirectory($tmpParent, '${zipPath.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Fastest, $false)
-} finally {
-  Remove-Item $tmpParent -Recurse -Force -ErrorAction SilentlyContinue
-}
-`.trim();
-        fs.writeFileSync(psScriptPath, psContent, 'utf8');
-
-        // Run compression asynchronously with periodic progress updates
-        const progressInterval = setInterval(async () => {
-          try {
-            if (fs.existsSync(zipPath)) {
-              const stat = fs.statSync(zipPath);
-              const pct = Math.min(55, Math.round(10 + (stat.size / (1024 * 1024 * 1024)) * 45));
-              await updateProgress(pct, `Compactando pastas... (${(stat.size / 1024 / 1024).toFixed(0)}MB)`);
-            }
-          } catch {}
-        }, 5000);
-
         await new Promise((resolve, reject) => {
-          let stderr = '';
-          const child = exec(`powershell -ExecutionPolicy Bypass -File "${psScriptPath}"`, { timeout: 600000 });
-          child.stderr.on('data', (data) => { stderr += data.toString(); });
-          child.on('close', (code) => {
-            clearInterval(progressInterval);
-            if (code !== 0) reject(new Error(stderr.trim() || `PowerShell exit code ${code}`));
-            else resolve();
-          });
-          child.on('error', (err) => {
-            clearInterval(progressInterval);
-            reject(err);
-          });
+          const output = fs.createWriteStream(zipPath);
+          const archive = require('archiver')('zip', { zlib: { level: 1 } });
+          output.on('close', resolve);
+          archive.on('error', reject);
+          archive.pipe(output);
+
+          const progressInterval = setInterval(() => {
+            try {
+              if (fs.existsSync(zipPath)) {
+                const st = fs.statSync(zipPath);
+                const pct = Math.min(55, Math.round(10 + (st.size / (1024 * 1024 * 1024)) * 45));
+                updateProgress(pct, `Compactando pastas... (${(st.size / 1024 / 1024).toFixed(0)}MB)`);
+              }
+            } catch {}
+          }, 5000);
+
+          for (const folder of existentFolders) {
+            archive.directory(folder, path.basename(folder));
+          }
+          archive.finalize();
+          progressInterval.unref();
         });
-        try { fs.unlinkSync(psScriptPath); } catch {}
 
         await updateProgress(60, 'Compactação concluída. Verificando...');
 
         const stat = fs.statSync(zipPath);
-        const fileName = require('path').basename(zipPath);
+        const fileName = path.basename(zipPath);
 
-        // Read backup config
         const { data: config } = await supabase
           .from('backup_config')
           .select('destination_path, destination_type')
