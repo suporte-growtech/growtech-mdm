@@ -99,6 +99,34 @@ async function listenForCommands() {
           .update({ status: 'sent', sent_at: new Date().toISOString() })
           .eq('id', command.id);
 
+        // Check device policies before executing
+        let policyBlocked = false;
+        if (command.type === 'install_app' && command.payload?.name) {
+          const { data: dp } = await supabase
+            .from('device_policies')
+            .select('policies!inner(settings)')
+            .eq('device_id', deviceId)
+            .eq('status', 'active');
+          if (dp && dp.length > 0) {
+            for (const row of dp) {
+              const s = row.policies?.settings;
+              if (s?.allowed_apps && Array.isArray(s.allowed_apps)) {
+                const ok = s.allowed_apps.some(a => command.payload.name.toLowerCase().includes(a.toLowerCase()));
+                if (!ok) { policyBlocked = true; break; }
+              }
+            }
+          }
+        }
+
+        if (policyBlocked) {
+          await supabase.from('commands').update({
+            status: 'failed',
+            result: { error: 'Instalação bloqueada pela política de Apps Permitidos' },
+            executed_at: new Date().toISOString(),
+          }).eq('id', command.id);
+          return;
+        }
+
         try {
           const result = await executeCommand(command);
           await supabase

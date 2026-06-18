@@ -1,10 +1,8 @@
 const API = '/api';
 const LATEST_AGENT = '1.0.0';
 let token = localStorage.getItem('mdm_token');
-let userRole = null;
 let devicesCache = [];
 let policiesCache = [];
-let appCatalog = [];
 let currentDeviceId = null;
 let statusChart = null;
 
@@ -59,16 +57,9 @@ $('loginForm').addEventListener('submit', async (e) => {
       body: JSON.stringify({ username: $('username').value, password: $('password').value })
     });
     token = res.token;
-    userRole = res.user?.role || 'admin';
     localStorage.setItem('mdm_token', token);
     $('loginPage').classList.add('hidden');
     $('app').classList.remove('hidden');
-    const sfu = document.querySelector('.sidebar-footer .name');
-    const sfr = document.querySelector('.sidebar-footer .role');
-    if (sfu) sfu.textContent = res.user?.username || 'Usuário';
-    if (sfr) sfr.textContent = res.user?.role || '';
-    const sfa = document.querySelector('.sidebar-footer-avatar');
-    if (sfa) sfa.textContent = (res.user?.username || 'U')[0].toUpperCase();
     initApp();
   } catch (e) {
     err.textContent = e.message;
@@ -103,19 +94,7 @@ $('themeToggle').addEventListener('click', () => {
   setTheme(next);
 });
 
-function initApp() {
-  const isOperator = userRole === 'operator';
-  document.querySelectorAll('[data-page="policiesPage"], [data-page="commandsPage"]').forEach(el => {
-    el.style.display = isOperator ? 'none' : '';
-  });
-  loadDashboard(); loadDevices(); loadPolicies(); loadMap();
-  if (isOperator) loadCatalog();
-  setInterval(loadDashboard, 15000);
-}
-
-async function loadCatalog() {
-  try { appCatalog = await api('/apps'); } catch {}
-}
+function initApp() { loadDashboard(); loadDevices(); loadPolicies(); loadMap(); setInterval(loadDashboard, 15000); }
 
 /* Dashboard */
 async function loadDashboard() {
@@ -232,20 +211,6 @@ async function showDeviceDetail(id) {
   setVal('detailAgentVersion', v + (outdated ? ' <span class="badge badge-warning">desatualizado</span>' : ''));
   if ($('detailStatus')) $('detailStatus').innerHTML = `<span class="badge badge-${d.status}">● ${d.status}</span>`;
 
-  // Role-based actions
-  const isOperator = userRole === 'operator';
-  document.querySelectorAll('.quick-actions .btn').forEach(b => b.style.display = '');
-  if (isOperator) {
-    document.querySelectorAll('#cmdUninstall, #cmdScript, #cmdLock, #cmdRestart, #cmdShutdown').forEach(b => b.style.display = 'none');
-    const installBtn = $('cmdInstall');
-    installBtn.textContent = '';
-    installBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Instalar do Catálogo';
-    installBtn.onclick = () => showCatalogModal(d.id);
-  } else {
-    const installBtn = $('cmdInstall');
-    installBtn.onclick = () => currentDeviceId && showCmdModal('install_app');
-  }
-
   try {
     const cmds = await api(`/devices/${id}?history=true`);
     $('detailCommands').innerHTML = cmds && cmds.length
@@ -263,9 +228,27 @@ async function showDeviceDetail(id) {
         ).join('')
       : '<li style="color:var(--text-muted);justify-content:center;padding:24px">Nenhum comando executado ainda</li>';
   } catch {}
+
+  // Load assigned policies
+  try {
+    const dps = await api(`/device_policies?device_id=${id}`);
+    const policiesSection = $('detailCommands').parentElement;
+    const header = policiesSection.querySelector('.card-header h3');
+    if (dps && dps.length > 0) {
+      header.textContent = 'Políticas Ativas';
+      dps.forEach(dp => {
+        const badge = document.createElement('span');
+        badge.className = 'badge badge-active';
+        badge.textContent = dp.policies?.name || dp.policy_id;
+        badge.style.marginLeft = '8px';
+        header.parentElement.appendChild(badge);
+      });
+    }
+  } catch {}
 }
 
 /* Device actions */
+$('cmdInstall').addEventListener('click', () => currentDeviceId && showCmdModal('install_app'));
 $('cmdUninstall').addEventListener('click', () => currentDeviceId && showCmdModal('uninstall_app'));
 $('cmdScript').addEventListener('click', () => currentDeviceId && showCmdModal('run_script'));
 $('cmdLock').addEventListener('click', async () => {
@@ -352,6 +335,12 @@ const TEMPLATES = {
     desc: 'Desativa telemetria e rastreamento',
     priority: 4,
     settings: { disable_telemetry: true, disable_cortana: true, disable_ads: true, disable_location: false }
+  },
+  allowed_apps: {
+    name: 'Apps Permitidos',
+    desc: 'Bloqueia instalação de apps não autorizados',
+    priority: 9,
+    settings: { allowed_apps: ['Chrome', 'Teams', 'Outlook', 'ChatGPT', 'WhatsApp'] }
   }
 };
 
@@ -486,33 +475,6 @@ $('broadcastType').addEventListener('change', () => {
   else if (t === 'run_script') $('broadcastScriptField').classList.remove('hidden');
   else if (t === 'set_wallpaper') $('broadcastWallpaperField').classList.remove('hidden');
 });
-
-/* Catalog modal */
-function showCatalogModal(deviceId) {
-  currentDeviceId = deviceId;
-  $('catalogModal').classList.remove('hidden');
-  const list = $('catalogList');
-  if (appCatalog.length === 0) {
-    list.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:24px">Nenhum app no catálogo</p>';
-    return;
-  }
-  list.innerHTML = appCatalog.map(a =>
-    `<button class="btn" onclick="installFromCatalog('${deviceId}','${a.name}')" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 14px">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <div><strong>${a.name}</strong><br><small style="color:var(--text-secondary)">${a.description || ''}</small></div>
-    </button>`
-  ).join('');
-}
-$('cancelCatalog').addEventListener('click', () => $('catalogModal').classList.add('hidden'));
-
-async function installFromCatalog(deviceId, appName) {
-  if (!confirm(`Instalar "${appName}" neste dispositivo?`)) return;
-  try {
-    await api('/commands', { method: 'POST', body: JSON.stringify({ device_id: deviceId, type: 'install_app', payload: { name: appName } }) });
-    $('catalogModal').classList.add('hidden');
-    alert(`Comando de instalação do ${appName} enviado!`);
-  } catch (e) { alert(e.message); }
-}
 
 /* Init */
 if (token) { $('loginPage').classList.add('hidden'); $('app').classList.remove('hidden'); initApp(); }
