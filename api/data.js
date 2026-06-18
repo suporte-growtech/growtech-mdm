@@ -5,17 +5,46 @@ module.exports = async (req, res) => {
   verifyToken(req, res, async () => {
     const path = req.url.split('?')[0].replace(/^\/api\/data/, '');
 
-    // GET /api/data/backups?device_id=X
+    // Backups
     if (path === '/backups' && req.method === 'GET') {
       const { device_id } = req.query;
-      let query = supabase.from('backups').select('*').order('created_at', { ascending: false });
+      let query = supabase
+        .from('backups')
+        .select('*, devices!inner(hostname)')
+        .order('created_at', { ascending: false });
       if (device_id) query = query.eq('device_id', device_id);
       const { data, error } = await query;
       if (error) return res.status(500).json({ error: error.message });
       return res.json(data || []);
     }
 
-    // GET /api/data/apps
+    // Backup config - get
+    if (path === '/backup-config' && req.method === 'GET') {
+      const { device_id } = req.query;
+      if (!device_id) return res.status(400).json({ error: 'device_id obrigatório' });
+      const { data, error } = await supabase
+        .from('backup_config')
+        .select('*')
+        .eq('device_id', device_id)
+        .maybeSingle();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json(data || {});
+    }
+
+    // Backup config - save
+    if (path === '/backup-config' && req.method === 'PUT') {
+      const { device_id, destination_path, destination_type } = req.body;
+      if (!device_id || !destination_path) return res.status(400).json({ error: 'device_id e destination_path obrigatórios' });
+      const { data, error } = await supabase
+        .from('backup_config')
+        .upsert({ device_id, destination_path, destination_type: destination_type || 'network' })
+        .select()
+        .single();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json(data);
+    }
+
+    // Apps catalog
     if (path === '/apps' && req.method === 'GET') {
       const { data, error } = await supabase.from('app_catalog').select('*').order('name');
       if (error) return res.status(500).json({ error: error.message });
@@ -36,7 +65,7 @@ module.exports = async (req, res) => {
       return res.json({ success: true });
     }
 
-    // GET /api/data/device_policies?device_id=X
+    // Device policies
     if (path === '/device_policies' && req.method === 'GET') {
       const { device_id } = req.query;
       if (!device_id) return res.status(400).json({ error: 'device_id obrigatório' });

@@ -94,7 +94,7 @@ $('themeToggle').addEventListener('click', () => {
   setTheme(next);
 });
 
-function initApp() { loadDashboard(); loadDevices(); loadPolicies(); loadMap(); setInterval(loadDashboard, 15000); }
+function initApp() { loadDashboard(); loadDevices(); loadPolicies(); loadMap(); loadBackups(); setInterval(loadDashboard, 15000); }
 
 /* Dashboard */
 async function loadDashboard() {
@@ -253,6 +253,19 @@ async function showDeviceDetail(id) {
     }
   } catch {}
 
+  // Load backup config
+  try {
+    const bc = await api(`/data/backup-config?device_id=${id}`);
+    const destText = $('backupDestText');
+    if (bc?.destination_path) {
+      destText.textContent = bc.destination_path;
+      destText.style.color = 'var(--text-primary)';
+    } else {
+      destText.textContent = 'Não configurado (usa C:\\BackupsGrowtech)';
+      destText.style.color = 'var(--text-muted)';
+    }
+  } catch {}
+
   // Load backups
   try {
     const bks = await api(`/data/backups?device_id=${id}`);
@@ -305,6 +318,25 @@ $('cmdBackup').addEventListener('click', async () => {
   if (!confirm('Iniciar backup deste dispositivo? Pastas: Documents, Desktop, Outlook, Teams')) return;
   await api('/commands', { method: 'POST', body: JSON.stringify({ device_id: currentDeviceId, type: 'backup', payload: {} }) });
   alert('Backup iniciado! O resultado aparecerá na seção de Backups em alguns minutos.');
+});
+$('editBackupDestBtn').addEventListener('click', () => {
+  if (!currentDeviceId) return;
+  $('backupConfigDeviceId').value = currentDeviceId;
+  $('backupConfigPath').value = $('backupDestText').textContent.includes('Não configurado') ? '' : $('backupDestText').textContent;
+  $('backupConfigModal').classList.remove('hidden');
+});
+$('cancelBackupConfig').addEventListener('click', () => $('backupConfigModal').classList.add('hidden'));
+$('saveBackupConfig').addEventListener('click', async () => {
+  const did = $('backupConfigDeviceId').value;
+  const path = $('backupConfigPath').value.trim();
+  const type = $('backupConfigType').value;
+  if (!path) { alert('Informe o caminho de destino'); return; }
+  try {
+    await api('/data/backup-config', { method: 'PUT', body: JSON.stringify({ device_id: did, destination_path: path, destination_type: type }) });
+    $('backupConfigModal').classList.add('hidden');
+    if (currentDeviceId) showDeviceDetail(currentDeviceId);
+    alert('Destino do backup configurado!');
+  } catch (e) { alert(e.message); }
 });
 
 /* Policies */
@@ -440,6 +472,33 @@ $('sendCmd').addEventListener('click', async () => {
     await api('/commands', { method: 'POST', body: JSON.stringify({ device_id: currentDeviceId, type, payload }) });
     $('cmdModal').classList.add('hidden');
     alert('Comando enviado!');
+  } catch (e) { alert(e.message); }
+});
+
+/* Backups */
+async function loadBackups() {
+  try {
+    const bks = await api('/data/backups');
+    $('backupList').innerHTML = bks && bks.length > 0
+      ? bks.map(b =>
+          `<tr>
+            <td><strong>${b.devices?.hostname || '—'}</strong></td>
+            <td style="color:var(--text-secondary);font-size:12px">${b.file_name}</td>
+            <td>${(b.size_bytes / 1024 / 1024).toFixed(1)} MB</td>
+            <td style="font-size:12px">${formatDate(b.created_at)}</td>
+            <td><span class="badge badge-${b.status === 'completed' ? 'active' : 'failed'}">${b.status}</span></td>
+          </tr>`
+        ).join('')
+      : '<tr><td colspan="5"><div class="empty-state"><p>Nenhum backup realizado</p></div></td></tr>';
+  } catch {}
+}
+
+$('backupAllBtn').addEventListener('click', async () => {
+  if (!confirm('Iniciar backup de TODOS os dispositivos online?\nPastas: Documents, Desktop, Outlook, Teams')) return;
+  try {
+    const res = await api('/broadcast', { method: 'POST', body: JSON.stringify({ type: 'backup', payload: {} }) });
+    alert(`Backup enviado para ${res.sent} dispositivo(s)!`);
+    setTimeout(loadBackups, 5000);
   } catch (e) { alert(e.message); }
 });
 

@@ -156,33 +156,64 @@ async function executeCommand(command) {
       ];
       const tmpDir = process.env.TEMP || 'C:\\Windows\\Temp';
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const zipPath = `${tmpDir}\\growtech_backup_${os.hostname()}_${timestamp}.zip`;
-      const folderList = folders.filter(f => require('fs').existsSync(f)).join(',');
-      if (!folderList) return { status: 'failed', result: { error: 'Nenhuma pasta encontrada para backup' } };
+      const zipName = `growtech_backup_${os.hostname()}_${timestamp}.zip`;
+      const zipPath = `${tmpDir}\\${zipName}`;
+      const existentFolders = folders.filter(f => require('fs').existsSync(f));
+      if (existentFolders.length === 0) return { status: 'failed', result: { error: 'Nenhuma pasta encontrada para backup' } };
       try {
-        execSync(`powershell -Command "Compress-Archive -Path @(${folders.filter(f => require('fs').existsSync(f)).map(f => `'${f}'`).join(',')}) -DestinationPath '${zipPath}' -Force"`, { timeout: 600000 });
+        execSync(`powershell -Command "Compress-Archive -Path @(${existentFolders.map(f => `'${f}'`).join(',')}) -DestinationPath '${zipPath}' -Force"`, { timeout: 600000 });
         const fs = require('fs');
         const stat = fs.statSync(zipPath);
-        const buffer = fs.readFileSync(zipPath);
         const fileName = require('path').basename(zipPath);
         const supabase = require('@supabase/supabase-js').createClient(
           process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY
         );
-        const { error: uploadErr } = await supabase.storage.from('backups').upload(fileName, buffer, {
-          contentType: 'application/zip', upsert: true
-        });
-        fs.unlinkSync(zipPath);
-        if (uploadErr) return { status: 'failed', result: { error: uploadErr.message } };
-        const { data: pubUrl } = supabase.storage.from('backups').getPublicUrl(fileName);
+
+        // Read backup config
+        const { data: config } = await supabase
+          .from('backup_config')
+          .select('destination_path, destination_type')
+          .eq('device_id', command.device_id)
+          .maybeSingle();
+
+        let finalPath = zipPath;
+        let storageUrl = '';
+
+        if (config?.destination_path) {
+          const dest = config.destination_path.replace(/\/+$/, '') + '\\' + zipName;
+          try {
+            execSync(`xcopy "${zipPath}" "${dest}" /Y`, { timeout: 30000 });
+            finalPath = dest;
+            storageUrl = dest;
+            // Keep local copy as fallback
+          } catch (copyErr) {
+            storageUrl = zipPath; // fallback to local
+          }
+        } else {
+          // No config: keep in Temp, try to copy to a shared location
+          const publicDest = `C:\\BackupsGrowtech\\${zipName}`;
+          try {
+            if (!fs.existsSync('C:\\BackupsGrowtech')) {
+              fs.mkdirSync('C:\\BackupsGrowtech', { recursive: true });
+            }
+            fs.copyFileSync(zipPath, publicDest);
+            finalPath = publicDest;
+            storageUrl = publicDest;
+          } catch {
+            storageUrl = zipPath;
+          }
+        }
+
         await supabase.from('backups').insert({
           device_id: command.device_id,
           file_name: fileName,
           size_bytes: stat.size,
           folders: folders.join(';'),
-          storage_url: pubUrl?.publicUrl || fileName,
+          storage_url: storageUrl,
           status: 'completed'
         });
-        return { status: 'executed', result: { message: `Backup criado: ${(stat.size / 1024 / 1024).toFixed(1)}MB`, file: fileName } };
+
+        return { status: 'executed', result: { message: `Backup criado: ${(stat.size / 1024 / 1024).toFixed(1)}MB`, path: storageUrl } };
       } catch (err) {
         return { status: 'failed', result: { error: err.message } };
       }

@@ -73,6 +73,12 @@
         </span>
         <span>Mapa</span>
       </button>
+      <button class="nav-item" data-page="backupsPage">
+        <span class="nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <span>Backups</span>
+      </button>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-footer-avatar">A</div>
@@ -236,6 +242,10 @@
           <div class="detail-item"><label>ID do Dispositivo</label><div class="value" id="detailId" style="font-size:11px">-</div></div>
           <div class="detail-item"><label>Localização</label><div class="value" id="detailLocation">-</div></div>
           <div class="detail-item"><label>Rede Wi-Fi</label><div class="value" id="detailWifi">-</div></div>
+          <div class="detail-item"><label>Destino do Backup</label><div class="value" id="detailBackupDest">
+            <span id="backupDestText">-</span>
+            <button class="btn btn-sm" id="editBackupDestBtn" style="margin-left:8px;font-size:10px">Configurar</button>
+          </div></div>
         </div>
         <div class="card">
           <div class="card-header"><h3>Políticas</h3></div>
@@ -330,6 +340,26 @@
             <p>Desligamento remoto</p>
           </div>
         </div>
+      <!-- Backups -->
+      <div id="backupsPage" class="page hidden">
+        <div class="section-header">
+          <h2>Backups</h2>
+          <button class="btn btn-primary btn-sm" id="backupAllBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+            Backup Geral
+          </button>
+        </div>
+        <p style="color:var(--text-secondary);margin-bottom:16px;font-size:14px">Backups centralizados de todos os dispositivos. Os arquivos ficam armazenados na nuvem (Supabase Storage).</p>
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Dispositivo</th><th>Arquivo</th><th>Tamanho</th><th>Data</th><th>Status</th></tr></thead>
+              <tbody id="backupList"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- Map -->
       <div id="mapPage" class="page hidden">
         <div class="section-header">
@@ -427,6 +457,26 @@
     <div class="modal-actions">
       <button class="btn" id="cancelBroadcast">Cancelar</button>
       <button class="btn btn-primary" id="sendBroadcast">Enviar para Todos</button>
+    </div>
+  </div>
+</div>
+
+<!-- Backup Config Modal -->
+<div id="backupConfigModal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal">
+    <h2>Configurar Destino do Backup</h2>
+    <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px">O backup será copiado para este caminho após ser criado. Use um caminho de rede (\\servidor\pasta) ou local.</p>
+    <input type="hidden" id="backupConfigDeviceId">
+    <label>Caminho de Destino</label>
+    <input type="text" id="backupConfigPath" placeholder="Ex: \\SERVER\Backups\Growtech ou D:\Backups">
+    <label>Tipo</label>
+    <select id="backupConfigType">
+      <option value="network">Rede (\\servidor\compartilhamento)</option>
+      <option value="local">Local (C:\Backups)</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn" id="cancelBackupConfig">Cancelar</button>
+      <button class="btn btn-primary" id="saveBackupConfig">Salvar</button>
     </div>
   </div>
 </div>
