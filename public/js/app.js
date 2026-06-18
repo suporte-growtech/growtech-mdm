@@ -26,6 +26,10 @@ function showPage(id) {
   const nav = document.querySelector(`[data-page="${id}"]`);
   if (nav) nav.classList.add('active');
   $('pageTitle').textContent = nav ? nav.querySelector('span:last-child').textContent : '';
+  if (id === 'mapPage') {
+    if (mapInstance) setTimeout(() => mapInstance.invalidateSize(), 100);
+    else loadMap();
+  }
 }
 
 function formatUptime(s) {
@@ -94,7 +98,7 @@ $('themeToggle').addEventListener('click', () => {
   setTheme(next);
 });
 
-function initApp() { loadDashboard(); loadDevices(); loadPolicies(); loadMap(); loadBackups(); setInterval(loadDashboard, 15000); }
+function initApp() { loadDashboard(); loadDevices(); loadPolicies(); loadBackups(); setInterval(loadDashboard, 15000); }
 
 /* Dashboard */
 async function loadDashboard() {
