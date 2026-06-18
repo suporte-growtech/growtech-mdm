@@ -178,15 +178,22 @@ async function executeCommand(command) {
         const folderList = existentFolders.map(f => `'${f.replace(/'/g, "''")}'`).join(',');
         const psContent = `
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+$ErrorActionPreference = 'Stop'
 $tmpParent = Join-Path $env:TEMP "growtech_links_$(Get-Random)"
-New-Item -ItemType Directory -Path $tmpParent -Force | Out-Null
-$folders = @(${folderList})
-$folders | ForEach-Object {
-  $name = Split-Path $_ -Leaf
-  cmd /c "mklink /J \`"$tmpParent\\$name\`" \`"$_\`" 2>nul"
+try {
+  New-Item -ItemType Directory -Path $tmpParent -Force | Out-Null
+  $folders = @(${folderList})
+  $folders | ForEach-Object {
+    $name = Split-Path $_ -Leaf
+    $target = $_
+    $link = "$tmpParent\$name"
+    $null = cmd /c "mklink /J `"$link`" `"$target`" 2>nul"
+    if (-not (Test-Path $link)) { throw "Falha ao criar junction para $target" }
+  }
+  [System.IO.Compression.ZipFile]::CreateFromDirectory($tmpParent, '${zipPath.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Fastest, $false)
+} finally {
+  Remove-Item $tmpParent -Recurse -Force -ErrorAction SilentlyContinue
 }
-[System.IO.Compression.ZipFile]::CreateFromDirectory($tmpParent, '${zipPath.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Fastest, $false)
-Remove-Item $tmpParent -Recurse -Force -ErrorAction SilentlyContinue
 `.trim();
         fs.writeFileSync(psScriptPath, psContent, 'utf8');
 
@@ -202,10 +209,17 @@ Remove-Item $tmpParent -Recurse -Force -ErrorAction SilentlyContinue
         }, 5000);
 
         await new Promise((resolve, reject) => {
-          exec(`powershell -ExecutionPolicy Bypass -File "${psScriptPath}"`, { timeout: 600000 }, (err) => {
+          let stderr = '';
+          const child = exec(`powershell -ExecutionPolicy Bypass -File "${psScriptPath}"`, { timeout: 600000 });
+          child.stderr.on('data', (data) => { stderr += data.toString(); });
+          child.on('close', (code) => {
             clearInterval(progressInterval);
-            if (err) reject(err);
+            if (code !== 0) reject(new Error(stderr.trim() || `PowerShell exit code ${code}`));
             else resolve();
+          });
+          child.on('error', (err) => {
+            clearInterval(progressInterval);
+            reject(err);
           });
         });
         try { fs.unlinkSync(psScriptPath); } catch {}
