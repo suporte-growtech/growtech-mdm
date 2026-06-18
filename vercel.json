@@ -3,6 +3,7 @@
   "buildCommand": "npm install",
   "outputDirectory": "public",
   "rewrites": [
+    { "source": "/api/data/(.*)", "destination": "/api/data" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
