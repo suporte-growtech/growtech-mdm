@@ -195,8 +195,7 @@ Remove-Item $tmpParent -Recurse -Force -ErrorAction SilentlyContinue
           try {
             if (fs.existsSync(zipPath)) {
               const stat = fs.statSync(zipPath);
-              // Estimate progress based on typical sizes (500MB = ~70%)
-              const pct = Math.min(50, Math.round(10 + (stat.size / (500 * 1024 * 1024)) * 40));
+              const pct = Math.min(55, Math.round(10 + (stat.size / (1024 * 1024 * 1024)) * 45));
               await updateProgress(pct, `Compactando pastas... (${(stat.size / 1024 / 1024).toFixed(0)}MB)`);
             }
           } catch {}
