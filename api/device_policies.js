@@ -23,11 +23,21 @@ module.exports = async (req, res) => {
       if (!did || !policy_id) return res.status(400).json({ error: 'device_id e policy_id obrigatórios' });
       const { data, error } = await supabase
         .from('device_policies')
-        .insert({ device_id: did, policy_id, status: 'active' })
+        .insert({ device_id: did, policy_id, status: 'applied' })
         .select('*, policies(*)')
         .single();
       if (error) return res.status(500).json({ error: error.message });
       return res.status(201).json(data);
+    }
+
+    // PATCH /api/device_policies - toggle policy status
+    if (req.method === 'PATCH') {
+      const { id, status } = req.body;
+      if (!id || !status) return res.status(400).json({ error: 'id e status obrigatórios' });
+      if (!['applied', 'inactive'].includes(status)) return res.status(400).json({ error: 'status deve ser applied ou inactive' });
+      const { data, error } = await supabase.from('device_policies').update({ status }).eq('id', id).select('*, policies(*)').single();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json(data);
     }
 
     // DELETE /api/device_policies?id=X - remove policy assignment

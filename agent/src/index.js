@@ -106,7 +106,7 @@ async function listenForCommands() {
             .from('device_policies')
             .select('policies!inner(settings)')
             .eq('device_id', deviceId)
-            .eq('status', 'active');
+            .eq('status', 'applied');
           if (dp && dp.length > 0) {
             for (const row of dp) {
               const s = row.policies?.settings;

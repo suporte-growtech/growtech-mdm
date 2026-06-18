@@ -232,19 +232,34 @@ async function showDeviceDetail(id) {
   // Load assigned policies
   try {
     const dps = await api(`/device_policies?device_id=${id}`);
-    const policiesSection = $('detailCommands').parentElement;
-    const header = policiesSection.querySelector('.card-header h3');
+    const container = $('detailPolicies');
     if (dps && dps.length > 0) {
-      header.textContent = 'Políticas Ativas';
-      dps.forEach(dp => {
-        const badge = document.createElement('span');
-        badge.className = 'badge badge-active';
-        badge.textContent = dp.policies?.name || dp.policy_id;
-        badge.style.marginLeft = '8px';
-        header.parentElement.appendChild(badge);
-      });
+      container.innerHTML = dps.map(dp =>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <strong>${dp.policies?.name || 'Política'}</strong>
+            <br><small style="color:var(--text-secondary)">${dp.policies?.description || ''}</small>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="badge badge-${dp.status === 'applied' ? 'active' : 'inactive'}">${dp.status === 'applied' ? '● ativa' : '○ inativa'}</span>
+            <button class="btn btn-sm" onclick="togglePolicy('${dp.id}','${dp.status === 'applied' ? 'inactive' : 'applied'}')">
+              ${dp.status === 'applied' ? 'Desativar' : 'Ativar'}
+            </button>
+          </div>
+        </div>`
+      ).join('');
+    } else {
+      container.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:16px">Nenhuma política atribuída</p>';
     }
   } catch {}
+}
+
+async function togglePolicy(id, newStatus) {
+  try {
+    await api('/device_policies', { method: 'PATCH', body: JSON.stringify({ id, status: newStatus }) });
+    alert(`Política ${newStatus === 'applied' ? 'ativada' : 'desativada'}!`);
+    if (currentDeviceId) showDeviceDetail(currentDeviceId);
+  } catch (e) { alert(e.message); }
 }
 
 /* Device actions */
