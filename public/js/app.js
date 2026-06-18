@@ -231,7 +231,7 @@ async function showDeviceDetail(id) {
 
   // Load assigned policies
   try {
-    const dps = await api(`/device_policies?device_id=${id}`);
+    const dps = await api(`/data/device_policies?device_id=${id}`);
     const container = $('detailPolicies');
     if (dps && dps.length > 0) {
       container.innerHTML = dps.map(dp =>
@@ -255,7 +255,7 @@ async function showDeviceDetail(id) {
 
   // Load backups
   try {
-    const bks = await api(`/backups?device_id=${id}`);
+    const bks = await api(`/data/backups?device_id=${id}`);
     const bc = $('detailBackups');
     if (bks && bks.length > 0) {
       bc.innerHTML = bks.map(b =>
@@ -275,7 +275,7 @@ async function showDeviceDetail(id) {
 
 async function togglePolicy(id, newStatus) {
   try {
-    await api('/device_policies', { method: 'PATCH', body: JSON.stringify({ id, status: newStatus }) });
+    await api('/data/device_policies', { method: 'PATCH', body: JSON.stringify({ id, status: newStatus }) });
     alert(`Política ${newStatus === 'applied' ? 'ativada' : 'desativada'}!`);
     if (currentDeviceId) showDeviceDetail(currentDeviceId);
   } catch (e) { alert(e.message); }
