@@ -26,10 +26,7 @@ function showPage(id) {
   const nav = document.querySelector(`[data-page="${id}"]`);
   if (nav) nav.classList.add('active');
   $('pageTitle').textContent = nav ? nav.querySelector('span:last-child').textContent : '';
-  if (id === 'mapPage') {
-    if (mapInstance) setTimeout(() => mapInstance.invalidateSize(), 100);
-    else loadMap();
-  }
+  if (id === 'mapPage') initMap();
 }
 
 function formatUptime(s) {
@@ -526,32 +523,52 @@ $('backupAllBtn').addEventListener('click', async () => {
 /* Map */
 let mapInstance = null;
 let mapMarkers = [];
+let mapInitAttempted = false;
 
-async function loadMap() {
-  const data = await api('/devices').catch(() => []);
-  const located = data.filter(d => d.latitude && d.longitude);
+async function initMap() {
+  if (mapInitAttempted) {
+    if (mapInstance) setTimeout(() => mapInstance.invalidateSize(), 200);
+    return;
+  }
+  mapInitAttempted = true;
 
-  if (!mapInstance && $('deviceMap')) {
+  if (typeof L === 'undefined') {
+    $('deviceMap').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">Erro: Leaflet não carregou. Verifique sua conexão.</div>';
+    return;
+  }
+
+  try {
     mapInstance = L.map('deviceMap').setView([-14.235, -51.9253], 4);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap',
       maxZoom: 18,
     }).addTo(mapInstance);
+    setTimeout(() => mapInstance.invalidateSize(), 300);
+    await loadMapMarkers();
+  } catch (err) {
+    $('deviceMap').innerHTML = `<div style="padding:40px;text-align:center;color:var(--text-muted)">Erro ao carregar mapa: ${err.message}</div>`;
   }
+}
 
-  if (mapInstance) {
-    mapMarkers.forEach(m => mapInstance.removeLayer(m));
-    mapMarkers = [];
-    located.forEach(d => {
-      const popup = `<strong>${d.hostname}</strong><br>${formatLocation(d)}<br>${d.wifi_ssid ? 'Wi-Fi: ' + d.wifi_ssid : ''}<br>${d.status}`;
-      const m = L.circleMarker([d.latitude, d.longitude], {
-        radius: 8, fillColor: d.status === 'online' ? '#22c55e' : '#5c5f7a',
-        color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.8,
-      }).addTo(mapInstance).bindPopup(popup);
-      mapMarkers.push(m);
-    });
-    if (located.length > 0) mapInstance.fitBounds(mapMarkers.map(m => m.getLatLng()), { padding: [40, 40] });
-  }
+async function loadMapMarkers() {
+  const data = await api('/devices').catch(() => []);
+  const located = data.filter(d => d.latitude && d.longitude);
+
+  if (!mapInstance) return;
+
+  mapMarkers.forEach(m => mapInstance.removeLayer(m));
+  mapMarkers = [];
+
+  located.forEach(d => {
+    const popup = `<strong>${d.hostname}</strong><br>${formatLocation(d)}<br>${d.wifi_ssid ? 'Wi-Fi: ' + d.wifi_ssid : ''}<br>${d.status}`;
+    const m = L.circleMarker([d.latitude, d.longitude], {
+      radius: 8, fillColor: d.status === 'online' ? '#22c55e' : '#5c5f7a',
+      color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.8,
+    }).addTo(mapInstance).bindPopup(popup);
+    mapMarkers.push(m);
+  });
+
+  if (located.length > 0) mapInstance.fitBounds(mapMarkers.map(m => m.getLatLng()), { padding: [40, 40] });
 
   $('locationList').innerHTML = located.length
     ? located.map(d =>
@@ -570,7 +587,7 @@ async function loadMap() {
 
 $('refreshMap').addEventListener('click', async () => {
   await api('/geolocate', { method: 'POST' }).catch(() => {});
-  loadMap();
+  loadMapMarkers();
 });
 
 /* Broadcast */
