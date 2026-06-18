@@ -154,20 +154,32 @@ async function executeCommand(command) {
         'C:\\Users\\ADM\\AppData\\Roaming\\Microsoft\\Outlook',
         'C:\\Users\\ADM\\AppData\\Roaming\\Microsoft\\Teams',
       ];
-      const tmpDir = process.env.TEMP || 'C:\\Windows\\Temp';
+      const tmpDir = (process.env.TEMP || 'C:\\Windows\\Temp').replace(/\\$/, '');
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const zipName = `growtech_backup_${os.hostname()}_${timestamp}.zip`;
       const zipPath = `${tmpDir}\\${zipName}`;
-      const existentFolders = folders.filter(f => require('fs').existsSync(f));
+      const fs = require('fs');
+      const existentFolders = folders.filter(f => fs.existsSync(f));
       if (existentFolders.length === 0) return { status: 'failed', result: { error: 'Nenhuma pasta encontrada para backup' } };
+
       try {
-        execSync(`powershell -Command "Compress-Archive -Path @(${existentFolders.map(f => `'${f}'`).join(',')}) -DestinationPath '${zipPath}' -Force"`, { timeout: 600000 });
-        const fs = require('fs');
-        const stat = fs.statSync(zipPath);
-        const fileName = require('path').basename(zipPath);
+        // Update progress
         const supabase = require('@supabase/supabase-js').createClient(
           process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY
         );
+        const updateProgress = async (pct, msg) => {
+          try { await supabase.from('commands').update({ result: { progress: pct, message: msg } }).eq('id', command.id); } catch {}
+        };
+
+        await updateProgress(10, 'Compactando pastas...');
+
+        const psCmd = `Compress-Archive -Path @(${existentFolders.map(f => `'${f}'`).join(',')}) -DestinationPath '${zipPath}' -Force -ErrorAction Stop`;
+        execSync(`powershell -Command "${psCmd.replace(/"/g, '\\"')}"`, { timeout: 600000 });
+
+        await updateProgress(60, 'Compactação concluída. Verificando...');
+
+        const stat = fs.statSync(zipPath);
+        const fileName = require('path').basename(zipPath);
 
         // Read backup config
         const { data: config } = await supabase
@@ -176,46 +188,43 @@ async function executeCommand(command) {
           .eq('device_id', command.device_id)
           .maybeSingle();
 
-        let finalPath = zipPath;
         let storageUrl = '';
 
+        await updateProgress(70, 'Copiando para destino...');
+
         if (config?.destination_path) {
-          const dest = config.destination_path.replace(/\/+$/, '') + '\\' + zipName;
+          const destDir = config.destination_path.replace(/\/+$/, '');
+          const dest = destDir + '\\' + zipName;
           try {
+            if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
             execSync(`xcopy "${zipPath}" "${dest}" /Y`, { timeout: 30000 });
-            finalPath = dest;
             storageUrl = dest;
-            // Keep local copy as fallback
           } catch (copyErr) {
-            storageUrl = zipPath; // fallback to local
-          }
-        } else {
-          // No config: keep in Temp, try to copy to a shared location
-          const publicDest = `C:\\BackupsGrowtech\\${zipName}`;
-          try {
-            if (!fs.existsSync('C:\\BackupsGrowtech')) {
-              fs.mkdirSync('C:\\BackupsGrowtech', { recursive: true });
-            }
-            fs.copyFileSync(zipPath, publicDest);
-            finalPath = publicDest;
-            storageUrl = publicDest;
-          } catch {
             storageUrl = zipPath;
           }
+        } else {
+          const publicDest = `C:\\BackupsGrowtech\\${zipName}`;
+          try {
+            if (!fs.existsSync('C:\\BackupsGrowtech')) fs.mkdirSync('C:\\BackupsGrowtech', { recursive: true });
+            fs.copyFileSync(zipPath, publicDest);
+            storageUrl = publicDest;
+          } catch { storageUrl = zipPath; }
         }
+
+        await updateProgress(90, 'Registrando backup...');
 
         await supabase.from('backups').insert({
           device_id: command.device_id,
           file_name: fileName,
           size_bytes: stat.size,
-          folders: folders.join(';'),
+          folders: existentFolders.join(';'),
           storage_url: storageUrl,
           status: 'completed'
         });
 
-        return { status: 'executed', result: { message: `Backup criado: ${(stat.size / 1024 / 1024).toFixed(1)}MB`, path: storageUrl } };
+        return { status: 'executed', result: { progress: 100, message: `Backup criado: ${(stat.size / 1024 / 1024).toFixed(1)}MB`, path: storageUrl } };
       } catch (err) {
-        return { status: 'failed', result: { error: err.message } };
+        return { status: 'failed', result: { error: err.message, progress: 0 } };
       }
     }
 

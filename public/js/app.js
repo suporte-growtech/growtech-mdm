@@ -476,6 +476,8 @@ $('sendCmd').addEventListener('click', async () => {
 });
 
 /* Backups */
+let backupPollTimer = null;
+
 async function loadBackups() {
   try {
     const bks = await api('/data/backups');
@@ -490,6 +492,21 @@ async function loadBackups() {
           </tr>`
         ).join('')
       : '<tr><td colspan="5"><div class="empty-state"><p>Nenhum backup realizado</p></div></td></tr>';
+
+    // Check for in-progress backups
+    const pending = await api('/commands?status=sent&type=backup').catch(() => []);
+    if (pending && pending.length > 0) {
+      const c = pending[0];
+      const p = c.result?.progress || 0;
+      $('backupProgress').classList.remove('hidden');
+      $('backupProgressBar').style.width = p + '%';
+      $('backupProgressPct').textContent = p + '%';
+      $('backupProgressText').textContent = c.result?.message || 'Backup em andamento...';
+      if (backupPollTimer) clearTimeout(backupPollTimer);
+      backupPollTimer = setTimeout(loadBackups, 3000);
+    } else {
+      $('backupProgress').classList.add('hidden');
+    }
   } catch {}
 }
 
@@ -498,7 +515,7 @@ $('backupAllBtn').addEventListener('click', async () => {
   try {
     const res = await api('/broadcast', { method: 'POST', body: JSON.stringify({ type: 'backup', payload: {} }) });
     alert(`Backup enviado para ${res.sent} dispositivo(s)!`);
-    setTimeout(loadBackups, 5000);
+    loadBackups();
   } catch (e) { alert(e.message); }
 });
 

@@ -349,7 +349,16 @@
             Backup Geral
           </button>
         </div>
-        <p style="color:var(--text-secondary);margin-bottom:16px;font-size:14px">Backups centralizados de todos os dispositivos. Os arquivos ficam armazenados na nuvem (Supabase Storage).</p>
+        <p style="color:var(--text-secondary);margin-bottom:16px;font-size:14px">Backups centralizados de todos os dispositivos.</p>
+        <div id="backupProgress" class="hidden" style="margin-bottom:12px;padding:12px;background:var(--bg-card);border-radius:var(--radius-md)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span id="backupProgressText">Iniciando backup...</span>
+            <span id="backupProgressPct">0%</span>
+          </div>
+          <div style="height:8px;background:var(--bg-input);border-radius:4px;overflow:hidden">
+            <div id="backupProgressBar" style="height:100%;width:0%;background:var(--accent);border-radius:4px;transition:width .5s"></div>
+          </div>
+        </div>
         <div class="card">
           <div class="table-wrapper">
             <table>
