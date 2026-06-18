@@ -179,16 +179,17 @@ async function executeCommand(command) {
         const psContent = `
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $ErrorActionPreference = 'Stop'
-$tmpParent = Join-Path $env:TEMP "growtech_links_$(Get-Random)"
+$tmpParent = Join-Path $env:TEMP "growtech_backup_$(Get-Random)"
 try {
   New-Item -ItemType Directory -Path $tmpParent -Force | Out-Null
   $folders = @(${folderList})
   $folders | ForEach-Object {
     $name = Split-Path $_ -Leaf
     $target = $_
-    $link = "$tmpParent\$name"
-    $null = cmd /c "mklink /J \`"$link\`" \`"$target\`" 2>nul"
-    if (-not (Test-Path $link)) { throw "Falha ao criar junction para $target" }
+    $dest = "$tmpParent\$name"
+    # robocopy follows junctions/junctions unlike mklink /J + ZipFile
+    $null = robocopy "$target" "$dest" /E /R:1 /W:1 /NDL /NFL /NJH /NJS 2>&1
+    if (-not (Test-Path $dest)) { throw "Falha ao copiar $target para $dest" }
   }
   [System.IO.Compression.ZipFile]::CreateFromDirectory($tmpParent, '${zipPath.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Fastest, $false)
 } finally {
@@ -245,7 +246,7 @@ try {
           const dest = destDir + '\\' + zipName;
           try {
             if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-            execSync(`xcopy "${zipPath}" "${dest}" /Y`, { timeout: 30000 });
+            fs.copyFileSync(zipPath, dest);
             storageUrl = dest;
           } catch (copyErr) {
             storageUrl = zipPath;
