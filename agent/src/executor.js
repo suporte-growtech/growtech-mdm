@@ -173,8 +173,24 @@ async function executeCommand(command) {
 
         await updateProgress(10, 'Compactando pastas...');
 
-        const psCmd = `Compress-Archive -Path @(${existentFolders.map(f => `'${f}'`).join(',')}) -DestinationPath '${zipPath}' -Force -ErrorAction Stop`;
-        execSync(`powershell -Command "${psCmd.replace(/"/g, '\\"')}"`, { timeout: 600000 });
+        // Write PowerShell script to temp file to avoid escaping hell
+        const psScriptPath = `${tmpDir}\\growtech_zip_${Date.now()}.ps1`;
+        const folderList = existentFolders.map(f => `'${f.replace(/'/g, "''")}'`).join(',');
+        const psContent = `
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$tmpParent = Join-Path $env:TEMP "growtech_links_$(Get-Random)"
+New-Item -ItemType Directory -Path $tmpParent -Force | Out-Null
+$folders = @(${folderList})
+$folders | ForEach-Object {
+  $name = Split-Path $_ -Leaf
+  cmd /c "mklink /J \`"$tmpParent\\$name\`" \`"$_\`" 2>nul"
+}
+[System.IO.Compression.ZipFile]::CreateFromDirectory($tmpParent, '${zipPath.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Optimal, $false)
+Remove-Item $tmpParent -Recurse -Force -ErrorAction SilentlyContinue
+`.trim();
+        fs.writeFileSync(psScriptPath, psContent, 'utf8');
+        execSync(`powershell -ExecutionPolicy Bypass -File "${psScriptPath}"`, { timeout: 600000 });
+        try { fs.unlinkSync(psScriptPath); } catch {}
 
         await updateProgress(60, 'Compactação concluída. Verificando...');
 
