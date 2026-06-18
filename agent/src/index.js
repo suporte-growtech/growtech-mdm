@@ -32,7 +32,7 @@ async function registerDevice() {
   } else {
     const { data: newDevice } = await supabase
       .from('devices')
-      .insert({ hostname: os.hostname(), serial_number: SERIAL_NUMBER, status: 'online' })
+      .insert({ hostname: os.hostname(), serial_number: SERIAL_NUMBER, status: 'online', agent_version: AGENT_VERSION })
       .select()
       .single();
     deviceId = newDevice?.id;
@@ -55,11 +55,14 @@ async function updateStatus(status) {
     .eq('id', deviceId);
 }
 
+const AGENT_VERSION = require('../package.json').version;
+
 async function sendSystemInfo() {
   try {
     const info = await getSystemInfo();
     await supabase.from('devices').update({
       ...info,
+      agent_version: AGENT_VERSION,
       last_seen: new Date().toISOString(),
       status: 'online',
     }).eq('id', deviceId);

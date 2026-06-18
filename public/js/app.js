@@ -1,4 +1,5 @@
 const API = '/api';
+const LATEST_AGENT = '1.0.0';
 let token = localStorage.getItem('mdm_token');
 let devicesCache = [];
 let policiesCache = [];
@@ -161,20 +162,22 @@ function formatLocation(d) {
 
 function renderDevices(list) {
   $('deviceList').innerHTML = list.length
-    ? list.map(d =>
-        `<tr onclick="showDeviceDetail('${d.id}')" style="cursor:pointer">
+    ? list.map(d => {
+        const outdated = d.agent_version && d.agent_version !== LATEST_AGENT;
+        return `<tr onclick="showDeviceDetail('${d.id}')" style="cursor:pointer">
           <td><strong>${d.hostname}</strong></td>
           <td style="color:var(--text-secondary)">${d.serial_number || '-'}</td>
           <td>${d.os || '-'}</td>
           <td>${formatBytes(d.ram_total)}</td>
           <td>${formatBytes(d.disk_total)}</td>
           <td><span class="badge badge-${d.status}">${d.status === 'online' ? '●' : '○'} ${d.status}</span></td>
+          <td style="font-size:12px;white-space:nowrap">${d.agent_version || '-'} ${outdated ? '<span class="badge badge-warning">desatualizado</span>' : ''}</td>
           <td style="color:var(--text-secondary);font-size:12px">${formatUptime(d.uptime)}</td>
           <td style="color:var(--text-secondary);font-size:12px">${formatLocation(d)}</td>
           <td style="color:var(--text-muted);font-size:11px">${formatDate(d.last_seen)}</td>
-        </tr>`
-      ).join('')
-    : '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><p>Nenhum dispositivo conectado</p></div></td></tr>';
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><p>Nenhum dispositivo conectado</p></div></td></tr>';
 }
 
 $('deviceSearch').addEventListener('input', e => {
@@ -203,6 +206,9 @@ async function showDeviceDetail(id) {
   setVal('detailEnrolled', formatDate(d.enrolled_at)); setVal('detailId', d.id);
   setVal('detailLocation', formatLocation(d));
   setVal('detailWifi', d.wifi_ssid || '-');
+  const v = d.agent_version || '-';
+  const outdated = d.agent_version && d.agent_version !== LATEST_AGENT;
+  setVal('detailAgentVersion', v + (outdated ? ' <span class="badge badge-warning">desatualizado</span>' : ''));
   if ($('detailStatus')) $('detailStatus').innerHTML = `<span class="badge badge-${d.status}">● ${d.status}</span>`;
 
   try {

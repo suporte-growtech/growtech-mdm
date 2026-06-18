@@ -244,6 +244,7 @@ tr:last-child td { border-bottom: none; }
 .badge-sent { background: var(--info-bg); color: var(--info); }
 .badge-executed { background: var(--success-bg); color: var(--success); }
 .badge-failed { background: var(--danger-bg); color: var(--danger); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); font-size:10px; padding:1px 5px; border-radius:4px; margin-left:4px; }
 .badge-active { background: var(--success-bg); color: var(--success); }
 .badge-inactive { background: rgba(148, 152, 176, .1); color: var(--text-secondary); }
 
