@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+const { execSync, exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -173,7 +173,7 @@ async function executeCommand(command) {
 
         await updateProgress(10, 'Compactando pastas...');
 
-        // Write PowerShell script to temp file to avoid escaping hell
+        // Write PowerShell script to temp file (Fastest compression to avoid hanging)
         const psScriptPath = `${tmpDir}\\growtech_zip_${Date.now()}.ps1`;
         const folderList = existentFolders.map(f => `'${f.replace(/'/g, "''")}'`).join(',');
         const psContent = `
@@ -185,11 +185,30 @@ $folders | ForEach-Object {
   $name = Split-Path $_ -Leaf
   cmd /c "mklink /J \`"$tmpParent\\$name\`" \`"$_\`" 2>nul"
 }
-[System.IO.Compression.ZipFile]::CreateFromDirectory($tmpParent, '${zipPath.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Optimal, $false)
+[System.IO.Compression.ZipFile]::CreateFromDirectory($tmpParent, '${zipPath.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Fastest, $false)
 Remove-Item $tmpParent -Recurse -Force -ErrorAction SilentlyContinue
 `.trim();
         fs.writeFileSync(psScriptPath, psContent, 'utf8');
-        execSync(`powershell -ExecutionPolicy Bypass -File "${psScriptPath}"`, { timeout: 600000 });
+
+        // Run compression asynchronously with periodic progress updates
+        const progressInterval = setInterval(async () => {
+          try {
+            if (fs.existsSync(zipPath)) {
+              const stat = fs.statSync(zipPath);
+              // Estimate progress based on typical sizes (500MB = ~70%)
+              const pct = Math.min(50, Math.round(10 + (stat.size / (500 * 1024 * 1024)) * 40));
+              await updateProgress(pct, `Compactando pastas... (${(stat.size / 1024 / 1024).toFixed(0)}MB)`);
+            }
+          } catch {}
+        }, 5000);
+
+        await new Promise((resolve, reject) => {
+          exec(`powershell -ExecutionPolicy Bypass -File "${psScriptPath}"`, { timeout: 600000 }, (err) => {
+            clearInterval(progressInterval);
+            if (err) reject(err);
+            else resolve();
+          });
+        });
         try { fs.unlinkSync(psScriptPath); } catch {}
 
         await updateProgress(60, 'Compactação concluída. Verificando...');
