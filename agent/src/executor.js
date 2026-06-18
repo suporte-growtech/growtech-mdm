@@ -173,9 +173,10 @@ async function executeCommand(command) {
 
         await new Promise((resolve, reject) => {
           const output = fs.createWriteStream(zipPath);
-          const archive = require('archiver')('zip', { zlib: { level: 1 } });
+          const { ZipArchive } = require('archiver');
+          const archive = new ZipArchive({ zlib: { level: 1 } });
           output.on('close', resolve);
-          archive.on('error', reject);
+          archive.on('error', (err) => { output.destroy(); reject(err); });
           archive.pipe(output);
 
           const progressInterval = setInterval(() => {
