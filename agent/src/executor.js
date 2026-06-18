@@ -187,7 +187,7 @@ try {
     $name = Split-Path $_ -Leaf
     $target = $_
     $link = "$tmpParent\$name"
-    $null = cmd /c "mklink /J `"$link`" `"$target`" 2>nul"
+    $null = cmd /c "mklink /J \`"$link\`" \`"$target\`" 2>nul"
     if (-not (Test-Path $link)) { throw "Falha ao criar junction para $target" }
   }
   [System.IO.Compression.ZipFile]::CreateFromDirectory($tmpParent, '${zipPath.replace(/'/g, "''")}', [System.IO.Compression.CompressionLevel]::Fastest, $false)
