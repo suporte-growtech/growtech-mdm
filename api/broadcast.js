@@ -7,6 +7,8 @@ const COMMAND_TYPES = [
   'update_policy', 'system_info', 'format'
 ];
 
+const OPERATOR_ALLOWED = ['install_app'];
+
 module.exports = async (req, res) => {
   verifyToken(req, res, async () => {
     if (req.method !== 'POST') {
@@ -17,6 +19,25 @@ module.exports = async (req, res) => {
     if (!type) return res.status(400).json({ error: 'type é obrigatório' });
     if (!COMMAND_TYPES.includes(type)) {
       return res.status(400).json({ error: `Tipo inválido. Tipos: ${COMMAND_TYPES.join(', ')}` });
+    }
+
+    // Operator restrictions
+    if (req.user.role === 'operator') {
+      if (!OPERATOR_ALLOWED.includes(type)) {
+        return res.status(403).json({ error: 'Operador só pode instalar aplicativos do catálogo' });
+      }
+      if (payload?.name) {
+        const { data: catalog } = await supabase
+          .from('app_catalog')
+          .select('name')
+          .ilike('name', payload.name);
+        if (!catalog || catalog.length === 0) {
+          return res.status(403).json({ error: `App "${payload.name}" não está no catálogo aprovado` });
+        }
+      }
+      if (payload?.path || payload?.url) {
+        return res.status(403).json({ error: 'Operador não pode usar caminho personalizado' });
+      }
     }
 
     let devices;
